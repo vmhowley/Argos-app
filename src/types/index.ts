@@ -28,5 +28,6 @@ export interface UserProfile {
   barrio: string;
   premium: boolean;
   recreaciones_usadas: number;
+  role?: 'user' | 'admin';
   created_at: string;
 }

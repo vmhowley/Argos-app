@@ -74,3 +74,17 @@ export const verifyReport = async (reportId: string): Promise<boolean> => {
   console.log('Report verified successfully:', data);
   return true;
 };
+
+export const getAllReports = async (): Promise<Report[]> => {
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching all reports:', error);
+    return [];
+  }
+
+  return data || [];
+};

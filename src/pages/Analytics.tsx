@@ -1,20 +1,42 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, TrendingUp, AlertCircle } from 'lucide-react';
+import { Trophy, TrendingUp, AlertCircle, MapPin } from 'lucide-react';
 import { supabase } from '../config/supabase';
-import { Barrio } from '../types';
-import { MainLayout } from '../components/layout';
+import { Barrio, Report } from '../types';
 import { Card } from '../components/ui';
+import { getAllReports } from '../services/reportService';
+import { calculateDistance, getUserLocation } from '../utils/geoUtils';
 
 export function Analytics() {
   const [barrios, setBarrios] = useState<Barrio[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [timeFilter, setTimeFilter] = useState('Last 7 Days');
   const [crimeFilter, setCrimeFilter] = useState('All Crimes');
+  const [locationFilter, setLocationFilter] = useState(false);
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadBarrios();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    await Promise.all([loadBarrios(), loadReports(), checkLocation()]);
+  };
+
+  const checkLocation = async () => {
+    try {
+      const location = await getUserLocation();
+      setUserLocation(location);
+    } catch (error) {
+      console.log('Location access denied or error:', error);
+    }
+  };
+
+  const loadReports = async () => {
+    const data = await getAllReports();
+    setReports(data);
+  };
 
   const loadBarrios = async () => {
     const { data, error } = await supabase
@@ -26,32 +48,7 @@ export function Analytics() {
     if (!error && data) {
       setBarrios(data);
     } else {
-      setBarrios([
-        {
-          id: '1',
-          nombre: 'Los Mina',
-          reportes_total: 150,
-          verificados: 102,
-          premio_actual: 'Mural + 10 luces LED',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '2',
-          nombre: 'Herrera',
-          reportes_total: 120,
-          verificados: 62,
-          premio_actual: '',
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: '3',
-          nombre: 'Villa Duarte',
-          reportes_total: 98,
-          verificados: 40,
-          premio_actual: '',
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      setBarrios([]);
     }
   };
 
@@ -60,6 +57,48 @@ export function Analytics() {
     return Math.round((barrio.verificados / barrio.reportes_total) * 100);
   };
 
+  // Filter reports based on selection
+  const filteredReports = reports.filter(report => {
+    // 1. Filter by Crime Type
+    if (crimeFilter !== 'All Crimes' && report.tipo !== crimeFilter) return false;
+    
+    // 2. Filter by Time
+    const date = new Date(report.created_at);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    let timeMatch = true;
+    if (timeFilter === 'Last 7 Days') timeMatch = diffDays <= 7;
+    else if (timeFilter === 'Last 30 Days') timeMatch = diffDays <= 30;
+    else if (timeFilter === 'Last 3 Months') timeMatch = diffDays <= 90;
+    else if (timeFilter === 'Last Year') timeMatch = diffDays <= 365;
+
+    if (!timeMatch) return false;
+
+    // 3. Filter by Location (200m radius)
+    if (locationFilter && userLocation) {
+      const distance = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        report.lat,
+        report.lng
+      );
+      if (distance > 200) return false;
+    }
+
+    return true;
+  });
+
+  // Calculate stats based on FILTERED reports
+  const totalReports = filteredReports.length;
+  
+  // Count by type based on FILTERED reports
+  const typeCount = filteredReports.reduce((acc, report) => {
+    acc[report.tipo] = (acc[report.tipo] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
     <>
       <div className="bg-[#4A5A8F] text-white px-6 py-8">
@@ -67,26 +106,47 @@ export function Analytics() {
 
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-5">
-            <p className="text-white/80 text-sm mb-2">Total Reports</p>
-            <p className="text-4xl font-bold mb-2">36,500</p>
+            <p className="text-white/80 text-sm mb-2">
+              {locationFilter ? 'Reports Nearby (200m)' : 'Total Reports'}
+            </p>
+            <p className="text-4xl font-bold mb-2">{totalReports}</p>
             <div className="flex items-center gap-1 text-sm">
               <TrendingUp className="w-4 h-4" />
-              <span>+12% this month</span>
+              <span>Real-time data</span>
             </div>
           </div>
 
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-5">
             <p className="text-white/80 text-sm mb-2">High Risk Areas</p>
-            <p className="text-4xl font-bold mb-2">8</p>
+            <p className="text-4xl font-bold mb-2">{barrios.length}</p>
             <div className="flex items-center gap-1 text-sm">
               <AlertCircle className="w-4 h-4" />
-              <span>Karachi zones</span>
+              <span>Monitored zones</span>
             </div>
           </div>
         </div>
       </div>
 
       <div className="px-6 py-6 space-y-4">
+        {userLocation && (
+          <Card className={`p-4 cursor-pointer transition-colors ${locationFilter ? 'bg-blue-50 border-blue-200' : ''}`} onClick={() => setLocationFilter(!locationFilter)}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${locationFilter ? 'bg-[#4A5A8F] text-white' : 'bg-gray-100 text-gray-500'}`}>
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900">Mi Sector (200m)</p>
+                  <p className="text-sm text-gray-500">Filtrar reportes cercanos</p>
+                </div>
+              </div>
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${locationFilter ? 'border-[#4A5A8F] bg-[#4A5A8F]' : 'border-gray-300'}`}>
+                {locationFilter && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+              </div>
+            </div>
+          </Card>
+        )}
+
         <Card className="p-4">
           <select
             value={timeFilter}
@@ -119,12 +179,16 @@ export function Analytics() {
 
           <div className="flex items-center justify-center mb-8">
             <div className="relative w-64 h-64">
-              <svg viewBox="0 0 200 200" className="transform -rotate-90">
-                <circle cx="100" cy="100" r="80" fill="none" stroke="#EF4444" strokeWidth="40" strokeDasharray="126 377" />
-                <circle cx="100" cy="100" r="80" fill="none" stroke="#F97316" strokeWidth="40" strokeDasharray="94 377" strokeDashoffset="-126" />
-                <circle cx="100" cy="100" r="80" fill="none" stroke="#FBBF24" strokeWidth="40" strokeDasharray="63 377" strokeDashoffset="-220" />
-                <circle cx="100" cy="100" r="80" fill="none" stroke="#FB923C" strokeWidth="40" strokeDasharray="94 377" strokeDashoffset="-283" />
+              {/* Simple pie chart visualization based on counts */}
+              <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
+                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#E5E7EB" strokeWidth="20" />
+                {/* We would calculate segments here properly in a real chart lib, for now simple visual */}
+                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#EF4444" strokeWidth="20" strokeDasharray={`${(typeCount['Robo'] || 0) / totalReports * 251 || 0} 251`} />
               </svg>
+              <div className="absolute inset-0 flex items-center justify-center flex-col">
+                 <span className="text-3xl font-bold text-gray-800">{filteredReports.length}</span>
+                 <span className="text-xs text-gray-500">Filtered</span>
+              </div>
             </div>
           </div>
 
@@ -132,29 +196,29 @@ export function Analytics() {
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-red-500 rounded-full"></div>
               <div>
-                <p className="text-sm text-gray-600">Mobile Snatching</p>
-                <p className="font-bold text-gray-900">12,500</p>
+                <p className="text-sm text-gray-600">Robo</p>
+                <p className="font-bold text-gray-900">{typeCount['Robo'] || 0}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
               <div>
-                <p className="text-sm text-gray-600">Motorcycle Theft</p>
-                <p className="font-bold text-gray-900">8,900</p>
+                <p className="text-sm text-gray-600">Asalto</p>
+                <p className="font-bold text-gray-900">{typeCount['Asalto'] || 0}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 bg-amber-400 rounded-full"></div>
               <div>
-                <p className="text-sm text-gray-600">Vehicle Theft</p>
-                <p className="font-bold text-gray-900">6,100</p>
+                <p className="text-sm text-gray-600">Vandalismo</p>
+                <p className="font-bold text-gray-900">{typeCount['Vandalismo'] || 0}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-orange-400 rounded-full"></div>
+              <div className="w-4 h-4 bg-gray-800 rounded-full"></div>
               <div>
-                <p className="text-sm text-gray-600">House Robbery</p>
-                <p className="font-bold text-gray-900">9,000</p>
+                <p className="text-sm text-gray-600">Homicidio</p>
+                <p className="font-bold text-gray-900">{typeCount['Homicidio'] || 0}</p>
               </div>
             </div>
           </div>

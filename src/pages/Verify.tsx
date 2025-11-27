@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, MapPin, Clock } from 'lucide-react';
 import { Report } from '../types';
 import { getUnverifiedReports, verifyReport } from '../services/reportService';
+import { getUserProfile } from '../services/authService';
 import { Map } from '../components/common/Map';
 import { formatTime } from '../utils/dateUtils';
 import { getUserLocation, calculateDistance } from '../utils/geoUtils';
@@ -23,30 +24,46 @@ export function Verify() {
     setLoading(true);
     
     try {
-      // Get user's location first
-      const location = await getUserLocation();
-      setUserLocation(location);
-      
+      // Get user profile to check for admin role
+      const userProfile = await getUserProfile();
+      const isAdmin = userProfile?.role === 'admin';
+      console.log(userProfile);
       // Fetch all unverified reports
       const allReports = await getUnverifiedReports();
-      
-      // Filter reports within 5km radius
-      const nearbyReports = allReports.filter(report => {
-        const distance = calculateDistance(
-          location.lat,
-          location.lng,
-          report.lat,
-          report.lng
-        );
-        return distance <= 5000; // 5km in meters
-      });
-      
-      setReports(nearbyReports);
-      setLocationError(false);
+
+      if (isAdmin) {
+        // Admins see all reports
+        setReports(allReports);
+        // Try to get location just for the "nearby" message, but don't fail if we can't
+        try {
+          const location = await getUserLocation();
+          setUserLocation(location);
+        } catch (e) {
+          console.log('Admin location not available, ignoring');
+        }
+        setLocationError(false);
+      } else {
+        // Regular users: Get location and filter by 5km radius
+        const location = await getUserLocation();
+        setUserLocation(location);
+        
+        const nearbyReports = allReports.filter(report => {
+          const distance = calculateDistance(
+            location.lat,
+            location.lng,
+            report.lat,
+            report.lng
+          );
+          return distance <= 5000; // 5km in meters
+        });
+        
+        setReports(nearbyReports);
+        setLocationError(false);
+      }
     } catch (error) {
-      console.error('Error getting location:', error);
+      console.error('Error loading reports:', error);
       setLocationError(true);
-      // Still load all reports if location fails
+      // Still load all reports if location fails (fallback behavior)
       const allReports = await getUnverifiedReports();
       setReports(allReports);
     }
@@ -58,33 +75,39 @@ export function Verify() {
     setVerifying(reportId);
     
     try {
-      // Get user's current location
-      const userLocation = await getUserLocation();
-      
-      // Find the report to get its location
-      const report = reports.find(r => r.id === reportId);
-      if (!report) {
-        alert('Reporte no encontrado.');
-        setVerifying(null);
-        return;
-      }
-      
-      // Calculate distance between user and incident
-      const distance = calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        report.lat,
-        report.lng
-      );
-      
-      // Check if user is within 300 meters
-      if (distance > 300) {
-        alert(
-          `Debes estar a menos de 300 metros del incidente para verificarlo.\n\n` +
-          `Distancia actual: ${Math.round(distance)} metros`
+      // Get user profile to check for admin role
+      const userProfile = await getUserProfile();
+      const isAdmin = userProfile?.role === 'admin';
+
+      if (!isAdmin) {
+        // Get user's current location
+        const userLocation = await getUserLocation();
+        
+        // Find the report to get its location
+        const report = reports.find(r => r.id === reportId);
+        if (!report) {
+          alert('Reporte no encontrado.');
+          setVerifying(null);
+          return;
+        }
+        
+        // Calculate distance between user and incident
+        const distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          report.lat,
+          report.lng
         );
-        setVerifying(null);
-        return;
+        
+        // Check if user is within 300 meters
+        if (distance > 300) {
+          alert(
+            `Debes estar a menos de 300 metros del incidente para verificarlo.\n\n` +
+            `Distancia actual: ${Math.round(distance)} metros`
+          );
+          setVerifying(null);
+          return;
+        }
       }
       
       // Proceed with verification
@@ -93,13 +116,21 @@ export function Verify() {
       if (success) {
         // Remove the verified report from the list
         setReports(reports.filter(r => r.id !== reportId));
+        if (isAdmin) {
+          alert('Reporte verificado exitosamente (Modo Admin).');
+        }
       } else {
         alert('Error al verificar el reporte. Intenta de nuevo.');
       }
     } catch (error) {
-      console.error('Error getting location:', error);
+      console.error('Error verifying report:', error);
+      // Only show location error if not admin (admins might not even need location enabled)
+      // But since we try to get location only if !isAdmin, this catch block handles both cases.
+      // If getUserProfile fails, it might throw, or if getUserLocation fails.
+      
+      // Let's refine the error message
       alert(
-        'No se pudo obtener tu ubicación. Asegúrate de permitir el acceso a la ubicación en tu navegador.'
+        'Ocurrió un error. Asegúrate de tener acceso a internet y ubicación habilitada (si no eres admin).'
       );
     }
     
@@ -136,7 +167,7 @@ export function Verify() {
             {!locationError && userLocation && (
               <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
                 <p className="text-sm text-blue-800">
-                  📍 Mostrando solo reportes dentro de 5 km de tu ubicación
+                  📍 Mostrando {reports.length === 0 ? 'reportes' : 'todos los reportes pendientes'}
                 </p>
               </div>
             )}
