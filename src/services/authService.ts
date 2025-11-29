@@ -3,25 +3,12 @@ import { UserProfile } from '../types';
 
 export async function ensureAuthenticated() {
   const { data: { session } } = await supabase.auth.getSession();
-  
-  if (!session) {
-    // Check if we have a stored session
-    const { data: { session: storedSession }, error } = await supabase.auth.getSession();
-    if (error || !storedSession) {
-       // If no session, try anonymous sign in as fallback for now, 
-       // but ideally we redirect to login page for full features
-       // For backward compatibility with current flow:
-       const { data, error: anonError } = await supabase.auth.signInAnonymously();
-       if (anonError) {
-         console.error('Error signing in anonymously:', anonError);
-         return null;
-       }
-       return data.session;
-    }
-    return storedSession;
-  }
-  
   return session;
+}
+
+export async function signInAnonymously() {
+  const { data, error } = await supabase.auth.signInAnonymously();
+  return { data, error };
 }
 
 export async function getCurrentUserId(): Promise<string | null> {

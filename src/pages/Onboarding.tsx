@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye } from 'lucide-react';
+import { signInAnonymously } from '../services/authService';
 
 export function Onboarding() {
   const [slide, setSlide] = useState(0);
@@ -27,10 +28,15 @@ export function Onboarding() {
     }
   };
 
-  const handleStart = () => {
-    const anonimoId = `Anónimo #${Math.floor(Math.random() * 9999)}`;
-    localStorage.setItem('argos_user_id', anonimoId);
-    navigate('/home');
+  const handleStart = async () => {
+    try {
+      const { error } = await signInAnonymously();
+      if (error) throw error;
+      navigate('/home');
+    } catch (error) {
+      console.error('Error signing in anonymously:', error);
+      alert('Error al iniciar como invitado. Por favor intenta registrarte.');
+    }
   };
 
   return (
@@ -68,12 +74,32 @@ export function Onboarding() {
             Siguiente
           </button>
         ) : (
-          <button
-            onClick={handleStart}
-            className="w-full bg-[#FFD700] text-[#003087] font-bold text-lg py-4 rounded-xl hover:bg-[#FFC700] transition-colors"
-          >
-            Empezar
-          </button>
+          <div className="space-y-4 w-full">
+            <button
+              onClick={handleStart}
+              className="w-full bg-[#FFD700] text-[#003087] font-bold text-lg py-4 rounded-xl hover:bg-[#FFC700] transition-colors"
+            >
+              Empezar como Invitado
+            </button>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate('/login')}
+                className="flex-1 bg-white/10 backdrop-blur-sm text-white font-semibold py-3 rounded-xl hover:bg-white/20 transition-colors border border-white/30"
+              >
+                Iniciar Sesión
+              </button>
+              <button
+                onClick={() => navigate('/signup')}
+                className="flex-1 bg-white text-[#003087] font-semibold py-3 rounded-xl hover:bg-gray-100 transition-colors"
+              >
+                Registrarse
+              </button>
+            </div>
+            <p className="text-white/60 text-xs text-center mt-2">
+              Al continuar aceptas nuestros términos y condiciones
+            </p>
+          </div>
         )}
       </div>
     </div>

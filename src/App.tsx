@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout';
 import { PrivateRoute } from './components/auth/PrivateRoute';
@@ -12,12 +11,9 @@ import { SOS } from './pages/SOS';
 import { Verify } from './pages/Verify';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
-import { ensureAuthenticated } from './services/authService';
-
 function App() {
-  useEffect(() => {
-    ensureAuthenticated();
-  }, []);
+  // Automatic anonymous login removed to prevent duplicate users
+
 
   return (
     <BrowserRouter>
