@@ -1,19 +1,26 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Phone, AlertTriangle, Users } from 'lucide-react';
-import { MainLayout, PageHeader } from '../components/layout';
+import { PageHeader } from '../components/layout';
 import { Card } from '../components/ui';
+import { startSOS, stopSOS } from '../services/sosService';
 
 export function SOS() {
   const [activating, setActivating] = useState(false);
-  const navigate = useNavigate();
 
-  const handleActivateSOS = () => {
+  const handleActivateSOS = async () => {
     setActivating(true);
-    setTimeout(() => {
+    try {
+      await startSOS();
+    } catch (e) {
+      console.error(e);
+      alert('Error al iniciar SOS');
       setActivating(false);
-      alert('Contactos de emergencia notificados');
-    }, 2000);
+    }
+  };
+
+  const handleCancelSOS = () => {
+    stopSOS();
+    setActivating(false);
   };
 
   return (
@@ -41,18 +48,23 @@ export function SOS() {
               : 'Mantén presionado el botón por 3 segundos para activar'}
           </p>
 
-          <button
-            onMouseDown={() => {
-              setTimeout(handleActivateSOS, 3000);
-            }}
-            onTouchStart={() => {
-              setTimeout(handleActivateSOS, 3000);
-            }}
-            disabled={activating}
-            className="w-full bg-red-500 text-white font-bold py-6 rounded-xl hover:bg-red-600 transition-colors text-xl disabled:bg-gray-300"
-          >
-            {activating ? 'Activando SOS...' : 'ACTIVAR SOS'}
-          </button>
+          {activating ? (
+            <button
+              onClick={handleCancelSOS}
+              className="w-full bg-gray-500 text-white font-bold py-6 rounded-xl hover:bg-gray-600 transition-colors text-xl"
+            >
+              CANCELAR SOS
+            </button>
+          ) : (
+            <button
+              onMouseDown={() => setTimeout(handleActivateSOS, 3000)}
+              onTouchStart={() => setTimeout(handleActivateSOS, 3000)}
+              disabled={activating}
+              className="w-full bg-red-500 text-white font-bold py-6 rounded-xl hover:bg-red-600 transition-colors text-xl disabled:bg-gray-300"
+            >
+              ACTIVAR SOS
+            </button>
+          )}
         </Card>
 
         <Card className="bg-amber-50 border border-amber-200">
@@ -98,17 +110,11 @@ export function SOS() {
             Números de Emergencia
           </h3>
           <div className="space-y-2">
-            <a
-              href="tel:911"
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-            >
+            <a href="tel:911" className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
               <span className="font-semibold text-gray-900">Policía Nacional</span>
               <span className="text-[#003087] font-bold">911</span>
             </a>
-            <a
-              href="tel:*462"
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-            >
+            <a href="tel:*462" className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
               <span className="font-semibold text-gray-900">Emergencias Médicas</span>
               <span className="text-[#003087] font-bold">*462</span>
             </a>

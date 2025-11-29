@@ -31,3 +31,11 @@ export interface UserProfile {
   role?: 'user' | 'admin';
   created_at: string;
 }
+
+// New type for SOS payload
+export interface SOSPayload {
+  latitude: number;
+  longitude: number;
+  audioBlob?: Blob;
+  timestamp: string;
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, MapPin, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, MapPin, Clock, User } from 'lucide-react';
 import { Report } from '../types';
 import { getUnverifiedReports, verifyReport } from '../services/reportService';
 import { getUserProfile } from '../services/authService';
@@ -14,6 +14,7 @@ export function Verify() {
   const [verifying, setVerifying] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,6 +28,7 @@ export function Verify() {
       // Get user profile to check for admin role
       const userProfile = await getUserProfile();
       const isAdmin = userProfile?.role === 'admin';
+      setCurrentUserId(userProfile?.id || null);
       console.log(userProfile);
       // Fetch all unverified reports
       const allReports = await getUnverifiedReports();
@@ -75,21 +77,29 @@ export function Verify() {
     setVerifying(reportId);
     
     try {
-      // Get user profile to check for admin role
+      // Get user profile to check for admin role and user ID
       const userProfile = await getUserProfile();
       const isAdmin = userProfile?.role === 'admin';
+      const currentUserId = userProfile?.id;
+
+      // Find the report to check ownership and location
+      const report = reports.find(r => r.id === reportId);
+      if (!report) {
+        alert('Reporte no encontrado.');
+        setVerifying(null);
+        return;
+      }
+
+      // Check if user is trying to verify their own report
+      if (currentUserId && report.user_id === currentUserId) {
+        alert('No puedes verificar tu propio reporte.');
+        setVerifying(null);
+        return;
+      }
 
       if (!isAdmin) {
         // Get user's current location
         const userLocation = await getUserLocation();
-        
-        // Find the report to get its location
-        const report = reports.find(r => r.id === reportId);
-        if (!report) {
-          alert('Reporte no encontrado.');
-          setVerifying(null);
-          return;
-        }
         
         // Calculate distance between user and incident
         const distance = calculateDistance(
@@ -190,7 +200,10 @@ export function Verify() {
               {reports.length} reporte{reports.length !== 1 ? 's' : ''} pendiente{reports.length !== 1 ? 's' : ''}
             </p>
             
-            {reports.map((report) => (
+            {reports.map((report) => {
+              const isOwnReport = currentUserId && report.user_id === currentUserId;
+              
+              return (
               <div
                 key={report.id}
                 className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200"
@@ -216,9 +229,16 @@ export function Verify() {
                         {formatTime(report.created_at)}
                       </div>
                     </div>
-                    <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
-                      Sin verificar
-                    </span>
+                    <div className="flex flex-col gap-1 items-end">
+                      <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">
+                        Sin verificar
+                      </span>
+                      {isOwnReport && (
+                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                          <User className="w-3 h-3" /> Tu reporte
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <p className="text-gray-700 mb-3">{report.descripcion}</p>
@@ -240,11 +260,20 @@ export function Verify() {
 
                   <button
                     onClick={() => handleVerify(report.id)}
-                    disabled={verifying === report.id}
-                    className="w-full bg-green-500 text-white font-bold py-3 rounded-xl hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    disabled={verifying === report.id || !!isOwnReport}
+                    className={`w-full font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                      isOwnReport
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-green-500 text-white hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed'
+                    }`}
                   >
                     {verifying === report.id ? (
                       'Verificando...'
+                    ) : isOwnReport ? (
+                      <>
+                        <User className="w-5 h-5" />
+                        No puedes verificar tu propio reporte
+                      </>
                     ) : (
                       <>
                         <CheckCircle className="w-5 h-5" />
@@ -254,7 +283,7 @@ export function Verify() {
                   </button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
             )}
           </>
@@ -263,3 +292,4 @@ export function Verify() {
     </div>
   );
 }
+

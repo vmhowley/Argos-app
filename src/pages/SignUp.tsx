@@ -31,7 +31,12 @@ export function SignUp() {
     const { error } = await signUp(email, password);
 
     if (error) {
-      setError(error.message);
+      console.error('Signup error:', error);
+      if (error.message.includes('already registered') || error.message.includes('unique constraint')) {
+        setError('Este correo ya está registrado. Por favor inicia sesión.');
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
     } else {
       // Success! Redirect to home or onboarding

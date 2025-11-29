@@ -86,3 +86,17 @@ export async function updateUserProfile(updates: Partial<UserProfile>) {
 
   return { data, error };
 }
+
+export async function updateUsername(newUsername: string) {
+  const userId = await getCurrentUserId();
+  if (!userId) return { error: 'No user logged in' };
+
+  const { data, error } = await supabase
+    .from('users_profiles')
+    .update({ anonimo_id: newUsername })
+    .eq('id', userId)
+    .select()
+    .single();
+
+  return { data, error };
+}

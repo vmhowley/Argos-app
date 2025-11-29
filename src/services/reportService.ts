@@ -88,3 +88,34 @@ export const getAllReports = async (): Promise<Report[]> => {
 
   return data || [];
 };
+
+export const getUserReports = async (userId: string): Promise<Report[]> => {
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching user reports:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
+export const getUserVerifiedReports = async (userId: string): Promise<Report[]> => {
+  const { data, error } = await supabase
+    .from('reports')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('verificado', true)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching user verified reports:', error);
+    return [];
+  }
+
+  return data || [];
+};
