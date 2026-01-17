@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, TrendingUp, AlertCircle, MapPin } from 'lucide-react';
+import { Trophy, TrendingUp, AlertCircle, MapPin, Filter } from 'lucide-react';
 import { supabase } from '../config/supabase';
 import { Barrio, Report } from '../types';
-import { Card } from '../components/ui';
 import { getAllReports } from '../services/reportService';
 import { calculateDistance, getUserLocation } from '../utils/geoUtils';
+import { cn } from '@/lib/utils';
 
 export function Analytics() {
   const [barrios, setBarrios] = useState<Barrio[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
-  const [timeFilter, setTimeFilter] = useState('Last 7 Days');
-  const [crimeFilter, setCrimeFilter] = useState('All Crimes');
+  const [timeFilter, setTimeFilter] = useState('Últimos 7 Días');
+  const [crimeFilter, setCrimeFilter] = useState('Todos');
   const [locationFilter, setLocationFilter] = useState(false);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function Analytics() {
 
   const loadReports = async () => {
     const data = await getAllReports();
-    setReports(data);
+    setReports(data || []);
   };
 
   const loadBarrios = async () => {
@@ -43,13 +43,10 @@ export function Analytics() {
       .from('barrios')
       .select('*')
       .order('verificados', { ascending: false })
-      .limit(10);
+      .limit(5);
 
-    if (!error && data) {
-      setBarrios(data);
-    } else {
-      setBarrios([]);
-    }
+    if (!error && data) setBarrios(data);
+    else setBarrios([]);
   };
 
   const getPercentage = (barrio: Barrio) => {
@@ -57,268 +54,204 @@ export function Analytics() {
     return Math.round((barrio.verificados / barrio.reportes_total) * 100);
   };
 
-  // Filter reports based on selection
   const filteredReports = reports.filter(report => {
-    // 1. Filter by Crime Type
-    if (crimeFilter !== 'All Crimes' && report.tipo !== crimeFilter) return false;
-    
-    // 2. Filter by Time
+    if (crimeFilter !== 'Todos' && report.tipo !== crimeFilter) return false;
     const date = new Date(report.created_at);
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 
     let timeMatch = true;
-    if (timeFilter === 'Last 7 Days') timeMatch = diffDays <= 7;
-    else if (timeFilter === 'Last 30 Days') timeMatch = diffDays <= 30;
-    else if (timeFilter === 'Last 3 Months') timeMatch = diffDays <= 90;
-    else if (timeFilter === 'Last Year') timeMatch = diffDays <= 365;
+    if (timeFilter === 'Últimos 7 Días') timeMatch = diffDays <= 7;
+    else if (timeFilter === 'Últimos 30 Días') timeMatch = diffDays <= 30;
 
     if (!timeMatch) return false;
-
-    // 3. Filter by Location (200m radius)
     if (locationFilter && userLocation) {
-      const distance = calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        report.lat,
-        report.lng
-      );
+      const distance = calculateDistance(userLocation.lat, userLocation.lng, report.lat, report.lng);
       if (distance > 200) return false;
     }
-
     return true;
   });
 
-  // Calculate stats based on FILTERED reports
-  const totalReports = filteredReports.length;
-  
-  // Count by type based on FILTERED reports
-  const typeCount = filteredReports.reduce((acc, report) => {
-    acc[report.tipo] = (acc[report.tipo] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
   return (
-    <>
-      <div className="bg-[#4A5A8F] text-white px-6 py-8">
-        <h1 className="text-3xl font-bold mb-6">Crime Analytics</h1>
+    <div className="min-h-screen bg-[#110505] text-white font-display pb-24">
 
+      {/* Header Stats */}
+      <div className="px-6 py-8">
+        <h1 className="text-3xl font-black italic uppercase tracking-tighter mb-6">Inteligencia en Vivo</h1>
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-5">
-            <p className="text-white/80 text-sm mb-2">
-              {locationFilter ? 'Reports Nearby (200m)' : 'Total Reports'}
-            </p>
-            <p className="text-4xl font-bold mb-2">{totalReports}</p>
-            <div className="flex items-center gap-1 text-sm">
-              <TrendingUp className="w-4 h-4" />
-              <span>Real-time data</span>
-            </div>
-          </div>
-
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-5">
-            <p className="text-white/80 text-sm mb-2">High Risk Areas</p>
-            <p className="text-4xl font-bold mb-2">{barrios.length}</p>
-            <div className="flex items-center gap-1 text-sm">
-              <AlertCircle className="w-4 h-4" />
-              <span>Monitored zones</span>
-            </div>
-          </div>
+          <StatCard
+            label={locationFilter ? 'Riesgos Cercanos' : 'Total Reportes'}
+            value={filteredReports.length}
+            sub="Verificados Tiempo Real"
+          />
+          <StatCard
+            label="Zonas de Riesgo"
+            value={barrios.length}
+            sub="Monitoreadas"
+          />
         </div>
       </div>
 
-      <div className="px-6 py-6 space-y-4">
-        {userLocation && (
-          <Card className={`p-4 cursor-pointer transition-colors ${locationFilter ? 'bg-blue-50 border-blue-200' : ''}`} onClick={() => setLocationFilter(!locationFilter)}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${locationFilter ? 'bg-[#4A5A8F] text-white' : 'bg-gray-100 text-gray-500'}`}>
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900">Mi Sector (200m)</p>
-                  <p className="text-sm text-gray-500">Filtrar reportes cercanos</p>
-                </div>
-              </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${locationFilter ? 'border-[#4A5A8F] bg-[#4A5A8F]' : 'border-gray-300'}`}>
-                {locationFilter && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
-              </div>
-            </div>
-          </Card>
-        )}
-
-        <Card className="p-4">
-          <select
+      <div className="px-6 space-y-4">
+        {/* Filters Scroll */}
+        <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+          <FilterChip active={locationFilter} onClick={() => setLocationFilter(!locationFilter)} icon={MapPin}>
+            Mi Sector {locationFilter && '(200m)'}
+          </FilterChip>
+          <FilterSelect
             value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value)}
-            className="w-full p-3 border border-gray-200 rounded-lg text-gray-700 bg-white focus:ring-2 focus:ring-[#4A5A8F] focus:border-transparent"
-          >
-            <option>Last 7 Days</option>
-            <option>Last 30 Days</option>
-            <option>Last 3 Months</option>
-            <option>Last Year</option>
-          </select>
-        </Card>
-
-        <Card className="p-4">
-          <select
+            onChange={(val: string) => setTimeFilter(val)}
+            options={['Últimos 7 Días', 'Últimos 30 Días']}
+          />
+          <FilterSelect
             value={crimeFilter}
-            onChange={(e) => setCrimeFilter(e.target.value)}
-            className="w-full p-3 border border-gray-200 rounded-lg text-gray-700 bg-white focus:ring-2 focus:ring-[#4A5A8F] focus:border-transparent"
-          >
-            <option>All Crimes</option>
-            <option>Robo</option>
-            <option>Asalto</option>
-            <option>Homicidio</option>
-            <option>Vandalismo</option>
-          </select>
-        </Card>
+            onChange={(val: string) => setCrimeFilter(val)}
+            options={['Todos', 'Robo', 'Asalto', 'Homicidio']}
+          />
+        </div>
 
-        <Card>
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Crime Distribution by Type</h3>
+        {/* Distribution */}
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+          <h3 className="font-bold text-white mb-6 uppercase tracking-wider text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-primary" /> Distribución de Alertas
+          </h3>
+          {/* Visual Bars instead of Pie Chart for cleaner UI */}
+          <div className="space-y-4">
+            <DistributionBar
+              label="Robo"
+              count={reports.filter(r => r.tipo === 'Robo').length}
+              total={reports.length || 1}
+              color="bg-orange-500"
+            />
+            <DistributionBar
+              label="Asalto"
+              count={reports.filter(r => r.tipo === 'Asalto').length}
+              total={reports.length || 1}
+              color="bg-red-500"
+            />
+            <DistributionBar
+              label="Homicidio"
+              count={reports.filter(r => r.tipo === 'Homicidio').length}
+              total={reports.length || 1}
+              color="bg-red-900"
+            />
+          </div>
+        </div>
 
-          <div className="flex items-center justify-center mb-8">
-            <div className="relative w-64 h-64">
-              {/* Simple pie chart visualization based on counts */}
-              <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
-                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#E5E7EB" strokeWidth="20" />
-                {/* We would calculate segments here properly in a real chart lib, for now simple visual */}
-                <circle cx="50" cy="50" r="40" fill="transparent" stroke="#EF4444" strokeWidth="20" strokeDasharray={`${(typeCount['Robo'] || 0) / totalReports * 251 || 0} 251`} />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center flex-col">
-                 <span className="text-3xl font-bold text-gray-800">{filteredReports.length}</span>
-                 <span className="text-xs text-gray-500">Filtered</span>
+        {/* Community Goal */}
+        <div className="relative overflow-hidden rounded-3xl p-6 border border-white/10 bg-gradient-to-br from-indigo-900/40 to-black">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-xl -mr-10 -mt-10"></div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg transform -rotate-12">
+                <Trophy className="w-6 h-6 text-black" />
               </div>
+              <h2 className="text-xl font-black italic">PREMIO DEL MES</h2>
+            </div>
+            <p className="text-2xl font-bold text-white mb-1">Mural + Luces LED</p>
+            <p className="text-white/40 text-xs">Patrocinador: Pinturas Popular</p>
+
+            <div className="mt-6 border-t border-white/10 pt-4">
+              <button className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors">
+                Enviar Evidencia para Ganar
+              </button>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-              <div>
-                <p className="text-sm text-gray-600">Robo</p>
-                <p className="font-bold text-gray-900">{typeCount['Robo'] || 0}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
-              <div>
-                <p className="text-sm text-gray-600">Asalto</p>
-                <p className="font-bold text-gray-900">{typeCount['Asalto'] || 0}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-amber-400 rounded-full"></div>
-              <div>
-                <p className="text-sm text-gray-600">Vandalismo</p>
-                <p className="font-bold text-gray-900">{typeCount['Vandalismo'] || 0}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-gray-800 rounded-full"></div>
-              <div>
-                <p className="text-sm text-gray-600">Homicidio</p>
-                <p className="font-bold text-gray-900">{typeCount['Homicidio'] || 0}</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card gradient>
-          <div className="flex items-center gap-2 mb-3">
-            <Trophy className="w-8 h-8" />
-            <h2 className="text-xl font-bold">Premio Actual</h2>
-          </div>
-          <p className="text-2xl font-bold mb-2">Mural + 10 luces LED</p>
-          <p className="text-white/90 text-sm">Patrocinado por: Pinturas Popular</p>
-        </Card>
-
-        <Card>
+        {/* Neighborhood Ranking */}
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Ranking Mensual</h3>
-            <TrendingUp className="w-5 h-5 text-green-600" />
+            <h3 className="font-bold text-lg">Ranking de Seguridad</h3>
+            <TrendingUp className="w-5 h-5 text-green-500" />
           </div>
-
           <div className="space-y-4">
             {barrios.map((barrio, index) => (
-              <div key={barrio.id} className="border-b border-gray-100 last:border-0 pb-4 last:pb-0">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-3">
+              <div key={barrio.id} className="flex items-center gap-4">
+                <span className={cn(
+                  "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                  index === 0 ? "bg-yellow-500 text-black" : "bg-white/10 text-white/50"
+                )}>
+                  {index + 1}
+                </span>
+                <div className="flex-1">
+                  <div className="flex justify-between mb-1">
+                    <span className="font-bold text-sm">{barrio.nombre}</span>
+                    <span className="font-mono text-xs text-green-400">{getPercentage(barrio)}%</span>
+                  </div>
+                  <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
-                        index === 0
-                          ? 'bg-yellow-500'
-                          : index === 1
-                          ? 'bg-gray-400'
-                          : index === 2
-                          ? 'bg-orange-600'
-                          : 'bg-gray-300'
-                      }`}
-                    >
-                      {index + 1}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-gray-900">{barrio.nombre}</h4>
-                      <p className="text-sm text-gray-500">
-                        {barrio.verificados} verificados de {barrio.reportes_total}
-                      </p>
-                    </div>
+                      className="h-full bg-green-500 rounded-full"
+                      style={{ width: `${getPercentage(barrio)}%` }}
+                    ></div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-green-600">{getPercentage(barrio)}%</p>
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                  <div
-                    className="bg-green-600 h-2 rounded-full transition-all"
-                    style={{ width: `${getPercentage(barrio)}%` }}
-                  />
                 </div>
               </div>
             ))}
           </div>
-        </Card>
+        </div>
 
-        <Card className="bg-blue-50 border border-blue-200">
-          <h3 className="font-bold text-[#003087] mb-2">¿Cómo funciona?</h3>
-          <ul className="space-y-2 text-sm text-gray-700">
-            <li>• El barrio con mayor % de reportes verificados gana</li>
-            <li>• Se mide mensualmente (1-31 de cada mes)</li>
-            <li>• El premio se invierte en mejoras comunitarias</li>
-            <li>• Todos pueden participar reportando y verificando</li>
-          </ul>
-        </Card>
-
-        {barrios.length > 0 && barrios[0] && (
-          <Card className="border-2 border-green-500">
-            <div className="flex items-center gap-2 mb-3">
-              <Trophy className="w-6 h-6 text-yellow-500" />
-              <h3 className="font-bold text-gray-900">Progreso para ganar</h3>
-            </div>
-            <p className="text-gray-600 mb-4">
-              Faltan{' '}
-              <span className="font-bold text-[#003087]">
-                {Math.max(0, 70 - getPercentage(barrios[0]))}%
-              </span>{' '}
-              para alcanzar el 70% y asegurar la victoria
-            </p>
-            <div className="space-y-2">
-              <button
-                onClick={() => navigate('/report')}
-                className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Ayudar con un reporte
-              </button>
-              <button
-                onClick={() => navigate('/verify')}
-                className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Verificar reportes
-              </button>
-            </div>
-          </Card>
-        )}
       </div>
-    </>
+    </div>
   );
+}
+
+function StatCard({ label, value, sub }: any) {
+  return (
+    <div className="bg-white/5 backdrop-blur-md rounded-2xl p-5 border border-white/10">
+      <p className="text-white/40 text-xs font-bold uppercase tracking-wider mb-2">{label}</p>
+      <p className="text-3xl font-bold text-white mb-1">{value}</p>
+      <div className="flex items-center gap-1.5">
+        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+        <span className="text-[10px] text-white/60">{sub}</span>
+      </div>
+    </div>
+  )
+}
+
+function FilterChip({ active, children, onClick, icon: Icon }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-bold whitespace-nowrap transition-all",
+        active
+          ? "bg-primary text-white border-primary shadow-[0_0_10px_rgba(242,13,13,0.3)]"
+          : "bg-white/5 text-white/60 border-white/10 hover:bg-white/10"
+      )}
+    >
+      {Icon && <Icon className="w-3 h-3" />}
+      {children}
+    </button>
+  )
+}
+
+function FilterSelect({ value, onChange, options }: any) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none bg-white/5 border border-white/10 text-white/60 text-xs font-bold px-4 py-2 pr-8 rounded-full focus:outline-none focus:border-white/30"
+      >
+        {options.map((opt: string) => <option key={opt} value={opt} className="bg-[#1A0A0A]">{opt}</option>)}
+      </select>
+      <Filter className="w-3 h-3 text-white/30 absolute right-3 top-2.5 pointer-events-none" />
+    </div>
+  )
+}
+
+function DistributionBar({ label, count, total, color }: any) {
+  const pct = (count / total) * 100;
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span className="text-white/70">{label}</span>
+        <span className="font-mono text-white/40">{count} reports</span>
+      </div>
+      <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
+        <div className={cn("h-full rounded-full", color)} style={{ width: `${pct}%` }}></div>
+      </div>
+    </div>
+  )
 }

@@ -29,6 +29,12 @@ export interface UserProfile {
   premium: boolean;
   recreaciones_usadas: number;
   role?: 'user' | 'admin';
+  // Extended Profile Fields (Optional)
+  blood_type?: string;
+  allergies?: string;
+  medications?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
   created_at: string;
 }
 

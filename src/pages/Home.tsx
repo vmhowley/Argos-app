@@ -1,156 +1,202 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Plus } from 'lucide-react';
+import { Shield, Bell, Compass } from 'lucide-react';
 import { useReports } from '../hooks/useReports';
+import { Map, MapControls, MapMarker, MarkerContent, MarkerPopup } from "@/components/ui/map";
 import { ReportCard } from '../components/features/reports/ReportCard';
-import { Map } from '../components/common/Map';
+import { cn } from '@/lib/utils';
+import { getUserLocation } from '../utils/geoUtils';
 
 export function Home() {
-  const [filter, setFilter] = useState<
-    'all' | 'Robo' | 'Asalto' | 'Homicidio' | 'Vandalismo'
-  >('all');
-  const { reports, activeReportsCount } = useReports(filter);
+  const [filter, setFilter] = useState<'all' | 'Robo' | 'Asalto' | 'Homicidio'>('all');
+  const { reports } = useReports(filter);
   const [sheetExpanded, setSheetExpanded] = useState(false);
-  const [touchStart, setTouchStart] = useState(0);
-  const [touchEnd, setTouchEnd] = useState(0);
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+  const [viewState, setViewState] = useState({
+    center: [-122.4194, 37.7749] as [number, number],
+    zoom: 13
+  });
   const navigate = useNavigate();
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.targetTouches[0].clientY);
-  };
+  useEffect(() => {
+    async function init() {
+      // 1. Get Location
+      try {
+        const { lat, lng } = await getUserLocation();
+        setUserLocation({ lat, lng });
+        setViewState(prev => ({ ...prev, center: [lng, lat], zoom: 15 }));
+      } catch (e) {
+        console.log('Location default');
+      }
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientY);
-  };
-
-  const handleTouchEnd = () => {
-    if (touchStart - touchEnd > 50) {
-      setSheetExpanded(true);
+      // 2. Load Reports
+      // Note: The original code uses `useReports(filter)` to manage reports.
+      // If `getRecentReports` and `setReports` are intended to replace or augment this,
+      // further changes to state management would be needed.
+      // For now, this part is commented out to avoid conflict with `useReports`.
+      // const data = await getRecentReports();
+      // setReports(data || []);
     }
-    if (touchEnd - touchStart > 50) {
-      setSheetExpanded(false);
+    init();
+  }, []);
+
+  const centerOnUser = async () => {
+    try {
+      const { lat, lng } = await getUserLocation();
+      setUserLocation({ lat, lng }); // Also set userLocation when re-centering
+      setViewState(prev => ({ ...prev, center: [lng, lat], zoom: 15 }));
+    } catch (e) {
+      console.error('Could not get user location', e);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-hidden">
-      <div
-        className={`relative bg-gray-900 overflow-hidden transition-all duration-300 ${
-          sheetExpanded ? 'h-[30vh]' : 'h-[60vh]'
-        }`}
-      >
-        <Map markers={reports} height="100%" />
+    <div className="fixed inset-0 w-full h-[100dvh] bg-black text-white overflow-hidden font-display">
 
-        <div className="absolute top-6 left-6 bg-white rounded-2xl shadow-lg p-4 min-w-[180px] z-[400]">
-          <h3 className="text-sm font-semibold text-gray-600 mb-3">
-            Live Reports
-          </h3>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-gray-700">Mobile Snatching</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-              <span className="text-gray-700">Vehicle Theft</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-gray-700">Mugging</span>
-            </div>
+      {/* 1. MAP BACKGROUND */}
+      <div className="fixed inset-0 z-0 w-full h-full">
+        <Map
+          center={viewState.center}
+          zoom={viewState.zoom}
+          theme="dark"
+        >
+          <MapControls position="top-right" />
+
+          {/* Re-center Button */}
+          <div className="absolute top-24 right-4 z-[400]">
+            <button
+              onClick={centerOnUser}
+              className="w-10 h-10 bg-black/80 backdrop-blur border border-white/20 rounded-full flex items-center justify-center text-white active:scale-90 transition-transform shadow-lg"
+            >
+              <Compass className="w-5 h-5" />
+            </button>
+          </div>
+
+          {reports.map((report) => (
+            <MapMarker key={report.id} longitude={report.lng} latitude={report.lat}>
+              <MarkerContent>
+                <div className="group relative flex flex-col items-center">
+                  <div className={cn(
+                    "w-10 h-10 rounded-full border-2 border-white shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center justify-center transition-transform hover:scale-110",
+                    report.tipo === 'Homicidio' ? 'bg-red-600' :
+                      report.tipo === 'Robo' ? 'bg-orange-500' : 'bg-primary'
+                  )}>
+                    {report.tipo === 'Robo' ? <Shield className="w-5 h-5 text-white" /> :
+                      report.tipo === 'Homicidio' ? <div className="font-bold text-white">!</div> :
+                        <Shield className="w-5 h-5 text-white" />}
+                  </div>
+                  <div className="w-1 h-3 bg-white/50 rounded-full mt-1"></div>
+                  <div className="w-8 h-1.5 bg-black/30 blur-sm rounded-[100%]"></div>
+                </div>
+              </MarkerContent>
+              <MarkerPopup>
+                <div className="px-3 py-2 min-w-[120px]">
+                  <p className="text-sm font-bold text-white">{report.tipo}</p>
+                  <p className="text-[10px] text-white/70 leading-tight">{report.descripcion}</p>
+                </div>
+              </MarkerPopup>
+            </MapMarker>
+          ))}
+        </Map>
+      </div>
+
+      {/* 2. HEADER OVERLAY - Fixed on top */}
+      <div className="fixed top-0 left-0 right-0 z-50 p-6 pt-8 flex justify-between items-start pointer-events-none bg-gradient-to-b from-black/80 to-transparent">
+        <div className="flex flex-col pointer-events-auto">
+          <div className="flex items-center gap-2 mb-1">
+            <Shield className="w-5 h-5 text-primary fill-primary" />
+            <span className="font-bold text-lg tracking-tight">ARGOS</span>
+          </div>
+          <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Sistema Seguro</span>
           </div>
         </div>
-        <div className="absolute top-6 right-6 bg-red-500 text-white rounded-full px-6 py-3 shadow-lg font-bold z-[400]">
-          {activeReportsCount} Active Reports
-        </div>
-        
-        <button
-          onClick={() => navigate('/report')}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-red-500 text-white rounded-full p-5 shadow-2xl hover:bg-red-600 transition-colors z-[400]"
-        >
-          <Plus className="w-8 h-8" />
+
+        <button className="w-10 h-10 rounded-full bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center pointer-events-auto active:bg-white/10 transition-colors">
+          <Bell className="w-5 h-5 text-white" />
         </button>
       </div>
 
+      {/* 3. BOTTOM SHEET - Fixed at bottom, slides up */}
       <div
-        className={`bg-white rounded-t-3xl -mt-6 relative z-10 transition-all duration-300 ${
-          sheetExpanded ? 'h-[calc(70vh-80px)]' : 'h-auto'
-        } overflow-y-auto`}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-40 bg-[#0A0505] rounded-t-[2.5rem] border-t border-white/10 shadow-[0_-10px_40px_rgba(0,0,0,0.8)] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] flex flex-col will-change-transform",
+          sheetExpanded ? "h-[75%]" : "h-[360px]" // Adjusted heights for better UX
+        )}
       >
-        <button
+        {/* Drag Handle */}
+        <div
+          className="w-full h-10 flex items-center justify-center shrink-0 cursor-pointer active:cursor-grabbing hover:bg-white/5 transition-colors rounded-t-[2.5rem]"
           onClick={() => setSheetExpanded(!sheetExpanded)}
-          className="w-full flex flex-col items-center pt-3 pb-1 cursor-pointer"
         >
-          <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
-          <p className="text-center text-gray-400 text-sm mt-2">
-            {sheetExpanded ? '▼ Desliza para minimizar' : '▲ Desliza para expandir'}
-          </p>
-        </button>
-
-        <div className="px-6 mb-6">
-          <button className="w-full bg-red-500 text-white rounded-2xl py-4 font-bold text-lg flex items-center justify-center gap-2 hover:bg-red-600 transition-colors shadow-lg">
-            <AlertTriangle className="w-6 h-6" />
-            EMERGENCY SOS
-          </button>
-          <p className="text-center text-gray-400 text-sm mt-2">
-            Instantly alert your emergency contacts
-          </p>
+          <div className="w-12 h-1 bg-white/20 rounded-full"></div>
         </div>
 
-        <div className="px-6">
-          <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-                filter === 'all'
-                  ? 'bg-[#003087] text-white'
-                  : 'bg-gray-200 text-gray-700'
-              }`}
+        {/* Scrollable Content */}
+        <div className="px-6 pb-32 flex-1 overflow-y-auto no-scrollbar overscroll-contain">
+
+          {/* Emergency CTA */}
+          <div className="mb-8 relative group cursor-pointer active:scale-[0.98] transition-all">
+            <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl group-hover:bg-primary/30 transition-all"></div>
+            <div
+              className="relative bg-gradient-to-r from-primary to-orange-600 rounded-2xl p-6 flex items-center justify-between shadow-lg border border-white/10"
+              onClick={() => navigate('/sos')}
             >
-              Todos
-            </button>
-            <button
-              onClick={() => setFilter('Robo')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-                filter === 'Robo'
-                  ? 'bg-[#003087] text-white'
-                  : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              Robos
-            </button>
-            <button
-              onClick={() => setFilter('Asalto')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-                filter === 'Asalto'
-                  ? 'bg-[#003087] text-white'
-                  : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              Asaltos
-            </button>
-            <button
-              onClick={() => setFilter('Homicidio')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
-                filter === 'Homicidio'
-                  ? 'bg-[#003087] text-white'
-                  : 'bg-gray-200 text-gray-700'
-              }`}
-            >
-              Homicidios
-            </button>
+              <div>
+                <h2 className="text-xl font-black italic uppercase tracking-tighter text-white">SOS de Emergencia</h2>
+                <p className="text-xs text-white/80 font-medium mt-1">Presiona para alerta instantánea</p>
+              </div>
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <Shield className="w-6 h-6 text-white fill-white" />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-3 pb-6">
+          {/* Stats / Filters */}
+          <div className="flex items-center justify-between mb-4 sticky top-0 bg-[#0A0505] py-2 z-10">
+            <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest">En Vivo</h3>
+            <div className="flex gap-2">
+              <FilterBadge active={filter === 'all'} onClick={() => setFilter('all')}>Todos</FilterBadge>
+              <FilterBadge active={filter === 'Robo'} onClick={() => setFilter('Robo')}>Robo</FilterBadge>
+              <FilterBadge active={filter === 'Asalto'} onClick={() => setFilter('Asalto')}>Asalto</FilterBadge>
+            </div>
+          </div>
+
+          {/* Report List */}
+          <div className="space-y-3 pb-safe">
             {reports.map((report) => (
-              <ReportCard key={report.id} report={report} />
+              <ReportCard
+                key={report.id}
+                report={report}
+                userLocation={userLocation}
+              />
             ))}
+            {reports.length === 0 && (
+              <div className="py-10 text-center text-white/20 text-sm font-medium">
+                No hay incidentes reportados cerca.
+              </div>
+            )}
           </div>
         </div>
       </div>
+
     </div>
   );
+}
+
+function FilterBadge({ active, children, onClick }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all",
+        active
+          ? "bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.3)]"
+          : "bg-transparent text-white/30 border-white/10 hover:border-white/30"
+      )}
+    >
+      {children}
+    </button>
+  )
 }

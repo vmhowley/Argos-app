@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, AlertCircle, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowRight, Shield } from 'lucide-react';
 import { signUp } from '../services/authService';
 
 export function SignUp() {
@@ -17,13 +17,13 @@ export function SignUp() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError('Passwords do not match');
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError('Password must be at least 6 characters');
       setLoading(false);
       return;
     }
@@ -33,119 +33,94 @@ export function SignUp() {
     if (error) {
       console.error('Signup error:', error);
       if (error.message.includes('already registered') || error.message.includes('unique constraint')) {
-        setError('Este correo ya está registrado. Por favor inicia sesión.');
+        setError('Email already exists. Please login.');
       } else {
         setError(error.message);
       }
       setLoading(false);
     } else {
-      // Success! Redirect to home or onboarding
       navigate('/home');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <div className="w-16 h-16 bg-[#003087] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg transform -rotate-3">
-          <span className="text-3xl font-bold text-white">A</span>
+    <div className="min-h-screen bg-[#110505] flex flex-col justify-center px-6 py-12 lg:px-8 relative overflow-hidden font-display">
+
+      <div className="sm:mx-auto sm:w-full sm:max-w-sm z-10">
+        <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl backdrop-blur-md">
+          <Shield className="w-8 h-8 text-primary" />
         </div>
-        <h2 className="mt-2 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Crea tu cuenta
+        <h2 className="mt-2 text-center text-3xl font-black italic uppercase tracking-tighter text-white">
+          Únete a Argos
         </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Únete a la comunidad de Argos
+        <p className="mt-2 text-center text-sm text-white/50">
+          Crea tu identidad verificada segura
         </p>
       </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form className="space-y-6" onSubmit={handleSignUp}>
+      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm z-10">
+        <form className="space-y-5" onSubmit={handleSignUp}>
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium leading-6 text-gray-900"
-            >
-              Correo electrónico
+            <label className="block text-xs font-bold uppercase tracking-widest text-white/40 mb-2">
+              Correo Electrónico
             </label>
-            <div className="mt-2 relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Mail className="h-5 w-5 text-white/30" />
               </div>
               <input
-                id="email"
-                name="email"
                 type="email"
-                autoComplete="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-xl border-0 py-3 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#003087] sm:text-sm sm:leading-6"
-                placeholder="tu@email.com"
+                className="block w-full rounded-xl border border-white/10 bg-white/5 py-4 pl-12 text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm sm:leading-6 transition-all"
+                placeholder="agente@argos.com"
               />
             </div>
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium leading-6 text-gray-900"
-            >
+            <label className="block text-xs font-bold uppercase tracking-widest text-white/40 mb-2">
               Contraseña
             </label>
-            <div className="mt-2 relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-white/30" />
               </div>
               <input
-                id="password"
-                name="password"
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full rounded-xl border-0 py-3 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#003087] sm:text-sm sm:leading-6"
+                className="block w-full rounded-xl border border-white/10 bg-white/5 py-4 pl-12 text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm sm:leading-6 transition-all"
                 placeholder="Mínimo 6 caracteres"
               />
             </div>
           </div>
 
           <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium leading-6 text-gray-900"
-            >
-              Confirmar contraseña
+            <label className="block text-xs font-bold uppercase tracking-widest text-white/40 mb-2">
+              Confirmar Contraseña
             </label>
-            <div className="mt-2 relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-white/30" />
               </div>
               <input
-                id="confirmPassword"
-                name="confirmPassword"
                 type="password"
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="block w-full rounded-xl border-0 py-3 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-[#003087] sm:text-sm sm:leading-6"
-                placeholder="Repite tu contraseña"
+                className="block w-full rounded-xl border border-white/10 bg-white/5 py-4 pl-12 text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm sm:leading-6 transition-all"
+                placeholder="Repetir contraseña"
               />
             </div>
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <AlertCircle
-                    className="h-5 w-5 text-red-400"
-                    aria-hidden="true"
-                  />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">{error}</h3>
-                </div>
-              </div>
+            <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-4 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <p className="text-sm font-medium text-red-400">{error}</p>
             </div>
           )}
 
@@ -153,20 +128,20 @@ export function SignUp() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full justify-center rounded-xl bg-[#003087] px-3 py-3 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#003087] transition-colors disabled:bg-gray-400"
+              className="flex w-full justify-center rounded-xl bg-white text-black px-3 py-4 text-sm font-bold uppercase tracking-wider shadow-lg hover:bg-gray-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creando cuenta...' : 'Registrarse'}
+              {loading ? 'Creando...' : 'Crear Cuenta'}
             </button>
           </div>
         </form>
 
-        <p className="mt-10 text-center text-sm text-gray-500">
-          ¿Ya tienes una cuenta?{' '}
+        <p className="mt-10 text-center text-sm text-white/40">
+          ¿Ya verificado?{' '}
           <Link
             to="/login"
-            className="font-semibold leading-6 text-[#003087] hover:text-blue-700 flex items-center justify-center gap-1 mt-2"
+            className="font-bold text-white hover:text-primary transition-colors inline-flex items-center gap-1"
           >
-            Inicia sesión <ArrowRight className="w-4 h-4" />
+            Ingreso de Agente <ArrowRight className="w-4 h-4" />
           </Link>
         </p>
       </div>

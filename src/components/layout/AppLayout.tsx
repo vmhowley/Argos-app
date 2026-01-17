@@ -13,7 +13,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const showNav = !routesWithoutNav.includes(location.pathname);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-white font-display">
       <div className={showNav ? 'pb-20' : ''}>
         {children}
       </div>

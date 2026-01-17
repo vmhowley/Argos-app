@@ -1,25 +1,19 @@
-import { ReactNode } from 'react';
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-interface CardProps {
-  children: ReactNode;
-  className?: string;
-  gradient?: boolean;
-  gradientColors?: string;
-  onClick?: () => void;
-}
+const Card = React.forwardRef<
+    HTMLDivElement,
+    React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+    <div
+        ref={ref}
+        className={cn(
+            "rounded-xl border bg-card text-card-foreground shadow-sm",
+            className
+        )}
+        {...props}
+    />
+))
+Card.displayName = "Card"
 
-export function Card({ children, className = '', gradient = false, gradientColors = 'from-amber-400 to-orange-500', onClick }: CardProps) {
-  const baseStyles = 'rounded-xl p-6 shadow-sm';
-  const bgStyles = gradient
-    ? `bg-gradient-to-r ${gradientColors} text-white shadow-lg`
-    : 'bg-white';
-
-  return (
-    <div 
-      className={`${baseStyles} ${bgStyles} ${className}`}
-      onClick={onClick}
-    >
-      {children}
-    </div>
-  );
-}
+export { Card }
