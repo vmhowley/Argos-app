@@ -1,4 +1,4 @@
--- Insert test reports for ArgosApp
+-- Insert test reports for Atenea GeoApp
 -- Run this in your Supabase SQL Editor to add sample data
 
 -- First, you need to get a valid user_id from your auth.users table

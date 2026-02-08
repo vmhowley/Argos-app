@@ -51,7 +51,7 @@ export function SignUp() {
           <Shield className="w-8 h-8 text-primary" />
         </div>
         <h2 className="mt-2 text-center text-3xl font-black italic uppercase tracking-tighter text-white">
-          Únete a Argos
+          Únete a Atenea Geo
         </h2>
         <p className="mt-2 text-center text-sm text-white/50">
           Crea tu identidad verificada segura
@@ -74,7 +74,7 @@ export function SignUp() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="block w-full rounded-xl border border-white/10 bg-white/5 py-4 pl-12 text-white placeholder:text-white/20 focus:ring-2 focus:ring-primary focus:border-transparent sm:text-sm sm:leading-6 transition-all"
-                placeholder="agente@argos.com"
+                placeholder="agente@Atenea Geo.com"
               />
             </div>
           </div>

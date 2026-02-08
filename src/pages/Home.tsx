@@ -20,7 +20,7 @@ export function Home() {
 
   useEffect(() => {
     async function init() {
-      // 1. Get Location
+      // 1. Get Initial Location
       try {
         const { lat, lng } = await getUserLocation();
         setUserLocation({ lat, lng });
@@ -29,13 +29,20 @@ export function Home() {
         console.log('Location default');
       }
 
-      // 2. Load Reports
-      // Note: The original code uses `useReports(filter)` to manage reports.
-      // If `getRecentReports` and `setReports` are intended to replace or augment this,
-      // further changes to state management would be needed.
-      // For now, this part is commented out to avoid conflict with `useReports`.
-      // const data = await getRecentReports();
-      // setReports(data || []);
+      // 2. Watch Position for updates
+      if (navigator.geolocation) {
+        const watchId = navigator.geolocation.watchPosition(
+          (pos) => {
+            setUserLocation({
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude
+            });
+          },
+          (err) => console.error(err),
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 }
+        );
+        return () => navigator.geolocation.clearWatch(watchId);
+      }
     }
     init();
   }, []);
@@ -72,6 +79,23 @@ export function Home() {
             </button>
           </div>
 
+          {/* User Location Marker */}
+          {userLocation && (
+            <MapMarker longitude={userLocation.lng} latitude={userLocation.lat} anchor="center">
+              <MarkerContent>
+                <div className="relative group flex items-center justify-center">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg relative z-10"></div>
+                  <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-75"></div>
+                  <div className="absolute -inset-4 bg-blue-500/20 rounded-full animate-pulse"></div>
+                  {/* Tooltip */}
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                    Tu Ubicación
+                  </div>
+                </div>
+              </MarkerContent>
+            </MapMarker>
+          )}
+
           {reports.map((report) => (
             <MapMarker key={report.id} longitude={report.lng} latitude={report.lat}>
               <MarkerContent>
@@ -105,7 +129,7 @@ export function Home() {
         <div className="flex flex-col pointer-events-auto">
           <div className="flex items-center gap-2 mb-1">
             <Shield className="w-5 h-5 text-primary fill-primary" />
-            <span className="font-bold text-lg tracking-tight">ARGOS</span>
+            <span className="font-bold text-lg tracking-tight">Atenea Geo</span>
           </div>
           <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>

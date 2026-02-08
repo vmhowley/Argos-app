@@ -9,7 +9,7 @@ export function Onboarding() {
 
   const slides = [
     {
-      title: 'ARGOS SECURE',
+      title: 'Atenea Geo SECURE',
       subtitle: 'Sistema de Vigilancia Inteligente',
       desc: 'Únete a la nueva generación de protección comunitaria con alertas verificadas en tiempo real.'
     },
@@ -112,7 +112,7 @@ export function Onboarding() {
               </button>
             </div>
             <p className="text-white/30 text-[10px] text-center pt-4">
-              Al continuar aceptas los Términos y Privacidad de Argos
+              Al continuar aceptas los Términos y Privacidad de Atenea Geo
             </p>
           </div>
         )}

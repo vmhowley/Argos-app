@@ -1,5 +1,5 @@
 /*
-  # Create ARGOS App Schema
+  # Create Atenea Geo App Schema
 
   ## New Tables
     

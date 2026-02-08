@@ -10,7 +10,7 @@ export default {
           paper: '#1A0A0A',
         },
         primary: {
-          DEFAULT: '#F20D0D', // Argos Red
+          DEFAULT: '#F20D0D', // Atenea Geo Red
           foreground: '#FFFFFF',
         },
         secondary: {
