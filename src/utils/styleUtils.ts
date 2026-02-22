@@ -1,5 +1,5 @@
-export const getMarkerColor = (tipo: string) => {
-  switch (tipo) {
+export const getMarkerColor = (type: string) => {
+  switch (type) {
     case 'Homicidio':
       return 'bg-red-500';
     case 'Robo':

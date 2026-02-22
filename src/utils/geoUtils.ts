@@ -29,6 +29,12 @@ export function getUserLocation(): Promise<{ lat: number; lng: number }> {
       return;
     }
 
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    };
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
@@ -37,13 +43,26 @@ export function getUserLocation(): Promise<{ lat: number; lng: number }> {
         });
       },
       (error) => {
-        reject(error);
+        // If high accuracy fails or times out, try one more time with high accuracy disabled
+        if (error.code === error.TIMEOUT || error.code === error.PERMISSION_DENIED || error.code === error.POSITION_UNAVAILABLE) {
+          console.warn('Falling back to low accuracy location...');
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              });
+            },
+            (finalError) => {
+              reject(finalError);
+            },
+            { ...options, enableHighAccuracy: false, timeout: 5000 }
+          );
+        } else {
+          reject(error);
+        }
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      options
     );
   });
 }

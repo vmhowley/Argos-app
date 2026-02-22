@@ -1,25 +1,33 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Clock, Sparkles, MapPin, CheckCircle2 } from 'lucide-react';
-import { Report } from '../types';
+import { ArrowLeft, Users, Clock, MapPin, CheckCircle2, MessageSquare, Send, Trash2 } from 'lucide-react';
+import { Report, ReportComment } from '../types';
 import { Map } from '../components/common/Map';
 import { supabase } from '../config/supabase';
 import { formatTime } from '../utils/dateUtils';
-import { cn } from '@/lib/utils';
+import { getCurrentUserId } from '../services/authService';
 
 export function Detail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [report, setReport] = useState<Report | null>(null);
-  const [showAI, setShowAI] = useState(false);
-  const [aiRecreation, setAiRecreation] = useState('');
-  const [selectedResponse, setSelectedResponse] = useState('');
+  const [comments, setComments] = useState<ReportComment[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       loadReport();
+      loadComments();
+      loadUser();
     }
   }, [id]);
+
+  const loadUser = async () => {
+    const uid = await getCurrentUserId();
+    setCurrentUserId(uid);
+  };
 
   const loadReport = async () => {
     const { data, error } = await supabase
@@ -33,14 +41,46 @@ export function Detail() {
     }
   };
 
-  const handleViewAI = async () => {
-    setShowAI(true);
-    const prompts = [
-      'Two hooded figures cut a chain. Runner with headphones approaches. Knife point threat. Neighbors scream. Suspects flee on motorcycle.',
-      'Group waits at dark corner. Motorcyclist surrounded at stop light. Phone snatched. Fleeing on foot.',
-      'Thief forces parked vehicle door. Alarm sounds. Grabs backpack from seat and runs.',
-    ];
-    setAiRecreation(prompts[Math.floor(Math.random() * prompts.length)]);
+  const loadComments = async () => {
+    const { data, error } = await supabase
+      .from('report_comments')
+      .select('*')
+      .eq('report_id', id)
+      .order('created_at', { ascending: true });
+
+    if (data && !error) {
+      setComments(data);
+    }
+  };
+
+  const handlePostComment = async () => {
+    if (!newComment.trim() || !id || !currentUserId) return;
+
+    setIsPosting(true);
+    const { error } = await supabase
+      .from('report_comments')
+      .insert({
+        report_id: id,
+        user_id: currentUserId,
+        content: newComment.trim()
+      });
+
+    if (!error) {
+      setNewComment('');
+      loadComments();
+    }
+    setIsPosting(false);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    const { error } = await supabase
+      .from('report_comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (!error) {
+      loadComments();
+    }
   };
 
   const formatDate = (timestamp: string) => {
@@ -68,7 +108,7 @@ export function Detail() {
           <ArrowLeft className="w-6 h-6 text-white" />
         </button>
         <div>
-          <h1 className="text-lg font-bold leading-none">{report.tipo}</h1>
+          <h1 className="text-lg font-bold leading-none">{report.type}</h1>
           <span className="text-xs text-white/40">Report ID: #{report.id.slice(0, 6)}</span>
         </div>
       </div>
@@ -93,12 +133,12 @@ export function Detail() {
             <span className="font-semibold text-sm">2 Witnesses Confirmed</span>
           </div>
 
-          <p className="text-white/90 text-lg leading-relaxed">{report.descripcion}</p>
+          <p className="text-white/90 text-lg leading-relaxed">{report.description}</p>
 
-          {report.verificado && (
+          {report.is_verified && (
             <div className="mt-4 flex items-center gap-2 text-[#00E0FF] bg-[#00E0FF]/10 px-3 py-2 rounded-lg border border-[#00E0FF]/20 text-sm font-bold uppercase tracking-wide w-fit">
               <CheckCircle2 className="w-4 h-4" />
-              Verified Police Folio
+              Reporte Confirmado
             </div>
           )}
         </div>
@@ -121,75 +161,89 @@ export function Detail() {
           </div>
         </div>
 
-        {/* AI Recreation Section */}
-        {!showAI && (
-          <div className="bg-gradient-to-br from-purple-900/40 to-black border border-purple-500/30 rounded-2xl p-6 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
-
-            <div className="flex items-center gap-3 mb-3 relative z-10">
-              <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-                <Sparkles className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="text-xl font-bold">AI Crime Re-enactment</h3>
-            </div>
-            <p className="text-white/60 mb-6 text-sm relative z-10">
-              Generate a realistic narrative scenario based on report metadata and witness statements.
-            </p>
-            <button
-              onClick={handleViewAI}
-              className="w-full bg-white text-purple-900 font-bold py-4 rounded-xl hover:bg-gray-100 transition-colors relative z-10 shadow-lg"
-            >
-              Generate Simulation ($0.99)
-            </button>
+        {/* Comments Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <MessageSquare className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-bold">Comentarios</h3>
+            <span className="bg-white/10 px-2 py-0.5 rounded-full text-xs text-white/60">
+              {comments.length}
+            </span>
           </div>
-        )}
 
-        {showAI && (
-          <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-amber-900/20 border-l-4 border-amber-500 p-4 rounded-r-lg">
-              <p className="text-xs text-amber-500 font-bold uppercase tracking-widest mb-1">
-                AI Simulation Disclaimer
-              </p>
-              <p className="text-xs text-amber-200/60">
-                Generated for educational safety purposes only. Not legal evidence.
-              </p>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg">
-              <p className="text-white/90 leading-relaxed italic border-l-2 border-primary pl-4">
-                "{aiRecreation}"
-              </p>
-            </div>
-
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 shadow-lg">
-              <h3 className="font-bold text-white mb-4">Tactical Response Assessment</h3>
-              <p className="text-sm text-white/50 mb-4">What would be the safest action?</p>
-              <div className="space-y-2">
-                {['Scream & Run', 'Surrender Property', 'Record Evidence', 'Call 911 Immediately'].map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setSelectedResponse(option)}
-                    className={cn(
-                      "w-full p-4 rounded-xl border-2 text-left font-medium transition-all text-sm",
-                      selectedResponse === option
-                        ? "border-primary bg-primary/10 text-white shadow-[0_0_15px_rgba(242,13,13,0.2)]"
-                        : "border-white/5 bg-transparent text-white/60 hover:border-white/20 hover:text-white"
+          <div className="space-y-3">
+            {comments.map((comment) => (
+              <div key={comment.id} className="bg-white/5 border border-white/10 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+                      {comment.user_id.slice(0, 2).toUpperCase()}
+                    </div>
+                    <span className="text-xs font-semibold text-white/50">
+                      Usuario #{comment.user_id.slice(0, 4)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-white/30 italic">
+                      {formatTime(comment.created_at)}
+                    </span>
+                    {currentUserId === comment.user_id && (
+                      <button
+                        onClick={() => handleDeleteComment(comment.id)}
+                        className="text-white/20 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     )}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-              {selectedResponse && (
-                <div className="mt-4 p-3 bg-green-900/20 border border-green-500/20 rounded-lg">
-                  <p className="text-sm text-green-400">
-                    <span className="font-bold">Community Consensus:</span> 85% agree with your choice.
-                  </p>
+                  </div>
                 </div>
-              )}
-            </div>
+                <p className="text-sm text-white/80 leading-relaxed">
+                  {comment.content}
+                </p>
+              </div>
+            ))}
+
+            {comments.length === 0 && (
+              <div className="text-center py-8 bg-white/5 border border-dashed border-white/10 rounded-2xl">
+                <p className="text-sm text-white/30">No hay comentarios aún. ¡Sé el primero en comentar!</p>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Comment Input */}
+          <div className="mt-6 bg-[#1A0A0A] border border-white/10 rounded-2xl p-4 sticky bottom-4 shadow-2xl">
+            {currentUserId ? (
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Escribe un comentario..."
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary/50 transition-colors"
+                  onKeyDown={(e) => e.key === 'Enter' && handlePostComment()}
+                />
+                <button
+                  onClick={handlePostComment}
+                  disabled={isPosting || !newComment.trim()}
+                  className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                >
+                  {isPosting ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Send className="w-5 h-5 text-white" />
+                  )}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-white/60 hover:bg-white/10 transition-colors"
+              >
+                Inicia sesión para comentar
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

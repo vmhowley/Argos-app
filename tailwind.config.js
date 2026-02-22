@@ -5,16 +5,24 @@ export default {
     extend: {
       colors: {
         background: {
-          DEFAULT: '#110505', // Very dark red/black for that premium feel
+          DEFAULT: '#1C2526', // Fondo oscuro / tarjetas
+          header: '#003087',  // Azul profundo Atenea
           dark: '#000000',
-          paper: '#1A0A0A',
         },
         primary: {
-          DEFAULT: '#F20D0D', // Atenea Geo Red
-          foreground: '#FFFFFF',
+          DEFAULT: '#FFD700', // Dorado (Acentos positivos / botones)
+          foreground: '#003087',
         },
         secondary: {
-          DEFAULT: '#003087', // Deep Blue
+          DEFAULT: '#003087', // Azul profundo Atenea
+          foreground: '#FFFFFF',
+        },
+        success: {
+          DEFAULT: '#4CAF50', // Verde mapa (Seguridad / verificado)
+          foreground: '#FFFFFF',
+        },
+        error: {
+          DEFAULT: '#FF3B30', // Rojo (Alerta / pánico)
           foreground: '#FFFFFF',
         },
         muted: {
@@ -22,7 +30,7 @@ export default {
           foreground: 'rgba(255, 255, 255, 0.6)',
         },
         card: {
-          DEFAULT: 'rgba(255, 255, 255, 0.03)',
+          DEFAULT: '#1C2526',
           border: 'rgba(255, 255, 255, 0.1)',
         }
       },

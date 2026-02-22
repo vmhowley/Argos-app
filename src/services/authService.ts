@@ -80,7 +80,7 @@ export async function updateUsername(newUsername: string) {
 
   const { data, error } = await supabase
     .from('users_profiles')
-    .update({ anonimo_id: newUsername })
+    .update({ anonymous_id: newUsername })
     .eq('id', userId)
     .select()
     .single();

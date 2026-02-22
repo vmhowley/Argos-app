@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Verified, Shield, Droplets, AlertTriangle, Pill, Phone, Plus, User, Stethoscope, Save, X } from 'lucide-react';
+import { ChevronLeft, Shield, Droplets, AlertTriangle, Pill, Phone, Stethoscope, Save, Star, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUserProfile, updateUserProfile } from '../services/authService';
 import { UserProfile } from '../types';
@@ -78,32 +78,33 @@ export function Profile() {
             <div className="p-6 flex flex-col items-center">
                 <div className="relative mb-6">
                     <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl"></div>
-                    <div className="relative w-32 h-32 rounded-full border-4 border-[#110505] bg-white/5 flex items-center justify-center overflow-hidden shadow-2xl">
-                        <User className="w-16 h-16 text-white/50" />
+                    <div className="relative w-32 h-32 rounded-full border-4 border-background bg-white/5 flex flex-col items-center justify-center overflow-hidden shadow-2xl">
+                        <div className="text-5xl mb-1">{profile.owl_type === 'polluelo' ? '🐣' : profile.owl_type === 'centinela' ? '🦉' : '🧙‍♂️'}</div>
+                        <div className="bg-primary text-background text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">LVL {profile.level || 1}</div>
                     </div>
                 </div>
 
-                <div className="text-center w-full max-w-xs space-y-2">
-                    {isEditing ? (
-                        <div className="space-y-2">
-                            <label className="text-xs text-white/40 uppercase font-bold">Alias / Code Name</label>
-                            <input
-                                value={formData.anonimo_id || ''}
-                                onChange={(e) => handleChange('anonimo_id', e.target.value)}
-                                className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-center font-bold text-white w-full focus:outline-none focus:border-primary"
+                <div className="text-center w-full max-w-xs space-y-2 mb-8">
+                    <div className="flex flex-col items-center gap-1">
+                        <h2 className="text-2xl font-black italic uppercase tracking-tighter text-white">
+                            {profile.anonymous_id || 'Anonymous Agent'}
+                        </h2>
+                        {/* Rank removed */}
+                    </div>
+
+                    {/* XP Progress Bar */}
+                    <div className="w-full space-y-1.5 pt-4">
+                        <div className="flex justify-between items-end px-1">
+                            <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">Experiencia</span>
+                            <span className="text-[10px] font-black text-primary uppercase">{profile.xp || 0} / {(profile.level || 1) * 1000} XP</span>
+                        </div>
+                        <div className="h-2 bg-white/5 rounded-full border border-white/5 overflow-hidden">
+                            <div
+                                className="h-full bg-primary shadow-[0_0_10px_rgba(255,215,0,0.5)] transition-all duration-1000"
+                                style={{ width: `${((profile.xp || 0) / ((profile.level || 1) * 1000)) * 100}%` }}
                             />
                         </div>
-                    ) : (
-                        <h2 className="text-2xl font-black italic uppercase tracking-tighter text-white">
-                            {profile.anonimo_id || 'Anonymous Agent'}
-                        </h2>
-                    )}
-
-                    {!isEditing && (
-                        <p className="text-white/50 text-xs font-mono tracking-widest uppercase">
-                            ID: #{profile.id.slice(0, 8)}
-                        </p>
-                    )}
+                    </div>
                 </div>
             </div>
 
@@ -114,8 +115,8 @@ export function Profile() {
                     <label className="text-xs font-bold text-white/40 uppercase tracking-widest mb-2 block">Operative Sector</label>
                     {isEditing ? (
                         <select
-                            value={formData.barrio || ''}
-                            onChange={(e) => handleChange('barrio', e.target.value)}
+                            value={formData.neighborhood || ''}
+                            onChange={(e) => handleChange('neighborhood', e.target.value)}
                             className="w-full bg-[#1A0A0A] border border-white/20 rounded-lg p-3 text-white focus:outline-none focus:border-primary"
                         >
                             <option value="">Select Sector</option>
@@ -129,7 +130,7 @@ export function Profile() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-orange-500/10 rounded-lg text-orange-500"><Shield className="w-5 h-5" /></div>
-                                <span className="font-bold">{profile.barrio || 'Unassigned'}</span>
+                                <span className="font-bold">{profile.neighborhood || 'Unassigned'}</span>
                             </div>
                             <div className="badge badge-outline text-[10px] opacity-50">CHANGE</div>
                         </div>
@@ -174,6 +175,56 @@ export function Profile() {
                             placeholder="e.g. Insulin"
                         />
                     </div>
+                </div>
+
+                {/* Premium Account */}
+                <div className={cn(
+                    "relative overflow-hidden rounded-2xl p-6 border transition-all",
+                    profile.premium
+                        ? "bg-primary/10 border-primary/50"
+                        : "bg-white/5 border-white/5"
+                )}>
+                    {profile.premium && (
+                        <div className="absolute top-0 right-0 bg-primary text-background font-black text-[8px] px-3 py-1 rounded-bl-xl uppercase tracking-widest">Premium Active</div>
+                    )}
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", profile.premium ? "bg-primary text-background" : "bg-white/10 text-white/40")}>
+                            <Star className={cn("w-6 h-6", profile.premium && "fill-background")} />
+                        </div>
+                        <div>
+                            <p className="font-black text-lg uppercase tracking-tighter">Atenea Premium</p>
+                            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                {profile.premium ? 'Acceso total desbloqueado' : 'Mejora tu seguridad hoy'}
+                            </p>
+                        </div>
+                    </div>
+
+                    {!profile.premium ? (
+                        <div className="space-y-4">
+                            <ul className="text-[10px] font-bold text-white/60 space-y-1">
+                                <li className="flex items-center gap-2 decoration-primary underline-offset-2">• Sin anuncios publicitarios</li>
+                                <li className="flex items-center gap-2">• Streaming de audio en SOS</li>
+                                <li className="flex items-center gap-2">• Notificaciones de barrio prioritarias</li>
+                            </ul>
+                            <button
+                                onClick={async () => {
+                                    const success = confirm('¿Deseas suscribirte a Atenea Premium por $9.99/mes?');
+                                    if (success) {
+                                        await updateUserProfile({ premium: true });
+                                        loadProfile();
+                                    }
+                                }}
+                                className="w-full bg-primary text-background font-black py-4 rounded-xl uppercase tracking-tighter text-sm shadow-[0_4px_15px_rgba(255,215,0,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
+                            >
+                                Subscribirse - $9.99/mes
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-widest bg-primary/10 w-fit px-3 py-1 rounded-full border border-primary/20">
+                            <Zap className="w-3 h-3 fill-primary" />
+                            Operativo Prioritario
+                        </div>
+                    )}
                 </div>
 
                 {/* Emergency Contact */}

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Trophy, TrendingUp, AlertCircle, MapPin, Filter } from 'lucide-react';
+import { TrendingUp, AlertCircle, MapPin, Filter } from 'lucide-react';
 import { supabase } from '../config/supabase';
 import { Barrio, Report } from '../types';
 import { getAllReports } from '../services/reportService';
@@ -14,7 +13,6 @@ export function Analytics() {
   const [crimeFilter, setCrimeFilter] = useState('Todos');
   const [locationFilter, setLocationFilter] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     loadData();
@@ -42,7 +40,7 @@ export function Analytics() {
     const { data, error } = await supabase
       .from('barrios')
       .select('*')
-      .order('verificados', { ascending: false })
+      .order('verified_count', { ascending: false })
       .limit(5);
 
     if (!error && data) setBarrios(data);
@@ -50,12 +48,12 @@ export function Analytics() {
   };
 
   const getPercentage = (barrio: Barrio) => {
-    if (barrio.reportes_total === 0) return 0;
-    return Math.round((barrio.verificados / barrio.reportes_total) * 100);
+    if (barrio.total_reports === 0) return 0;
+    return Math.round((barrio.verified_count / barrio.total_reports) * 100);
   };
 
   const filteredReports = reports.filter(report => {
-    if (crimeFilter !== 'Todos' && report.tipo !== crimeFilter) return false;
+    if (crimeFilter !== 'Todos' && report.type !== crimeFilter) return false;
     const date = new Date(report.created_at);
     const now = new Date();
     const diffDays = Math.ceil(Math.abs(now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
@@ -63,6 +61,7 @@ export function Analytics() {
     let timeMatch = true;
     if (timeFilter === 'Últimos 7 Días') timeMatch = diffDays <= 7;
     else if (timeFilter === 'Últimos 30 Días') timeMatch = diffDays <= 30;
+    else if (timeFilter === 'Todo el Tiempo') timeMatch = true;
 
     if (!timeMatch) return false;
     if (locationFilter && userLocation) {
@@ -82,7 +81,7 @@ export function Analytics() {
           <StatCard
             label={locationFilter ? 'Riesgos Cercanos' : 'Total Reportes'}
             value={filteredReports.length}
-            sub="Verificados Tiempo Real"
+            sub="Alertas en Tiempo Real"
           />
           <StatCard
             label="Zonas de Riesgo"
@@ -101,7 +100,7 @@ export function Analytics() {
           <FilterSelect
             value={timeFilter}
             onChange={(val: string) => setTimeFilter(val)}
-            options={['Últimos 7 Días', 'Últimos 30 Días']}
+            options={['Últimos 7 Días', 'Últimos 30 Días', 'Todo el Tiempo']}
           />
           <FilterSelect
             value={crimeFilter}
@@ -119,45 +118,26 @@ export function Analytics() {
           <div className="space-y-4">
             <DistributionBar
               label="Robo"
-              count={reports.filter(r => r.tipo === 'Robo').length}
-              total={reports.length || 1}
+              count={filteredReports.filter(r => r.type === 'Robo').length}
+              total={filteredReports.length || 1}
               color="bg-orange-500"
             />
             <DistributionBar
               label="Asalto"
-              count={reports.filter(r => r.tipo === 'Asalto').length}
-              total={reports.length || 1}
+              count={filteredReports.filter(r => r.type === 'Asalto').length}
+              total={filteredReports.length || 1}
               color="bg-red-500"
             />
             <DistributionBar
               label="Homicidio"
-              count={reports.filter(r => r.tipo === 'Homicidio').length}
-              total={reports.length || 1}
+              count={filteredReports.filter(r => r.type === 'Homicidio').length}
+              total={filteredReports.length || 1}
               color="bg-red-900"
             />
           </div>
         </div>
 
-        {/* Community Goal */}
-        <div className="relative overflow-hidden rounded-3xl p-6 border border-white/10 bg-gradient-to-br from-indigo-900/40 to-black">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-xl -mr-10 -mt-10"></div>
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg transform -rotate-12">
-                <Trophy className="w-6 h-6 text-black" />
-              </div>
-              <h2 className="text-xl font-black italic">PREMIO DEL MES</h2>
-            </div>
-            <p className="text-2xl font-bold text-white mb-1">Mural + Luces LED</p>
-            <p className="text-white/40 text-xs">Patrocinador: Pinturas Popular</p>
-
-            <div className="mt-6 border-t border-white/10 pt-4">
-              <button className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-colors">
-                Enviar Evidencia para Ganar
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* Community Goal Removed */}
 
         {/* Neighborhood Ranking */}
         <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
@@ -176,7 +156,7 @@ export function Analytics() {
                 </span>
                 <div className="flex-1">
                   <div className="flex justify-between mb-1">
-                    <span className="font-bold text-sm">{barrio.nombre}</span>
+                    <span className="font-bold text-sm">{barrio.name}</span>
                     <span className="font-mono text-xs text-green-400">{getPercentage(barrio)}%</span>
                   </div>
                   <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">

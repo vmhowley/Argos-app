@@ -5,11 +5,11 @@ export const getReports = async (filter: string = 'all'): Promise<Report[]> => {
   let query = supabase
     .from('reports')
     .select('*')
-    .eq('verificado', true)
+    .eq('is_verified', true)
     .order('created_at', { ascending: false });
 
   if (filter !== 'all') {
-    query = query.eq('tipo', filter);
+    query = query.eq('type', filter);
   }
 
   const { data, error } = await query;
@@ -23,9 +23,40 @@ export const getReports = async (filter: string = 'all'): Promise<Report[]> => {
 };
 
 export const createReport = async (report: Omit<Report, 'id' | 'created_at'>): Promise<Report | null> => {
+  // 1. Check for duplicates (< 200m and < 10min)
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+
+  const { data: recentReports, error: fetchError } = await supabase
+    .from('reports')
+    .select('*')
+    .eq('type', report.type)
+    .gt('created_at', tenMinutesAgo);
+
+  if (!fetchError && recentReports) {
+    const duplicate = recentReports.find(r => {
+      const dist = calculateDistance(r.lat, r.lng, report.lat, report.lng);
+      return dist < 200;
+    });
+
+    if (duplicate) {
+      // Merge: Add confirmation to the existing one
+      const { data: updated } = await supabase
+        .from('reports')
+        .update({
+          confirmations: (duplicate.confirmations || 0) + 1,
+          description: `${duplicate.description}\n(Actualización: ${report.description})`
+        })
+        .eq('id', duplicate.id)
+        .select()
+        .single();
+      return updated;
+    }
+  }
+
+  // 2. Insert new report
   const { data, error } = await supabase
     .from('reports')
-    .insert([report])
+    .insert([{ ...report, confirmations: 0, has_photo: !!report.foto_url }])
     .select()
     .single();
 
@@ -37,11 +68,28 @@ export const createReport = async (report: Omit<Report, 'id' | 'created_at'>): P
   return data;
 };
 
+// Add calculateDistance helper since it's needed here
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371e3; // meters
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+
 export const getUnverifiedReports = async (): Promise<Report[]> => {
   const { data, error } = await supabase
     .from('reports')
     .select('*')
-    .eq('verificado', false)
+    .eq('is_verified', false)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -54,10 +102,23 @@ export const getUnverifiedReports = async (): Promise<Report[]> => {
 
 export const verifyReport = async (reportId: string): Promise<boolean> => {
   console.log('Attempting to verify report:', reportId);
-  
-  const { data, error } = await supabase
+
+  // Get current confirmations
+  const { data: current } = await supabase
     .from('reports')
-    .update({ verificado: true })
+    .select('confirmations, has_photo')
+    .eq('id', reportId)
+    .single();
+
+  const newCount = (current?.confirmations || 0) + 1;
+  const shouldBeVerified = newCount >= 7 || (newCount >= 3 && current?.has_photo);
+
+  const { error } = await supabase
+    .from('reports')
+    .update({
+      confirmations: newCount,
+      is_verified: shouldBeVerified
+    })
     .eq('id', reportId)
     .select();
 
@@ -66,12 +127,6 @@ export const verifyReport = async (reportId: string): Promise<boolean> => {
     return false;
   }
 
-  if (!data || data.length === 0) {
-    console.error('No rows were updated. Check RLS policies.');
-    return false;
-  }
-
-  console.log('Report verified successfully:', data);
   return true;
 };
 
@@ -109,7 +164,7 @@ export const getUserVerifiedReports = async (userId: string): Promise<Report[]> 
     .from('reports')
     .select('*')
     .eq('user_id', userId)
-    .eq('verificado', true)
+    .eq('is_verified', true)
     .order('created_at', { ascending: false });
 
   if (error) {

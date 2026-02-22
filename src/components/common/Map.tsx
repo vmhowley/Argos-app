@@ -9,10 +9,10 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -35,18 +35,18 @@ function LocationMarker({ onLocationSelect }: { onLocationSelect: (lat: number, 
   return null;
 }
 
-export function Map({ 
+export function Map({
   center = [18.4861, -69.9312], // Default to Santo Domingo
-  zoom = 13, 
-  markers = [], 
-  onLocationSelect, 
+  zoom = 13,
+  markers = [],
+  onLocationSelect,
   interactive = true,
   height = '100%'
 }: MapProps) {
   return (
-    <MapContainer 
-      center={center} 
-      zoom={zoom} 
+    <MapContainer
+      center={center}
+      zoom={zoom}
       scrollWheelZoom={interactive}
       style={{ height: height, width: '100%', zIndex: 0 }}
       dragging={interactive}
@@ -56,17 +56,17 @@ export function Map({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      
+
       {markers.map((marker) => (
-        <Marker 
-          key={marker.id} 
+        <Marker
+          key={marker.id}
           position={[marker.lat, marker.lng]}
         >
           <Popup>
             <div className="p-2">
-              <h3 className="font-bold">{marker.tipo}</h3>
-              <p className="text-sm">{marker.descripcion}</p>
-              <span className={`inline-block w-3 h-3 rounded-full ${getMarkerColor(marker.tipo)}`}></span>
+              <h3 className="font-bold">{marker.type}</h3>
+              <p className="text-sm">{marker.description}</p>
+              <span className={`inline-block w-3 h-3 rounded-full ${getMarkerColor(marker.type)}`}></span>
             </div>
           </Popup>
         </Marker>

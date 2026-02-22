@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Shield, AlertTriangle, AlertCircle, MapPin, CheckCircle2 } from 'lucide-react';
+import { Shield, AlertTriangle, AlertCircle, MapPin, CheckCircle2, Flame, UserMinus } from 'lucide-react';
 import { Report } from '../../../types';
 import { formatTime } from '../../../utils/dateUtils';
 import { calculateDistance } from '@/utils/geoUtils';
@@ -24,7 +24,11 @@ export function ReportCard({ report, userLocation }: ReportCardProps) {
   const distanceLabel = getDistance();
 
   const getIcon = () => {
-    switch (report.tipo) {
+    switch (report.type) {
+      case 'Robo sin violencia': return <Shield className="w-5 h-5 text-blue-500" />;
+      case 'Robo con violencia': return <AlertTriangle className="w-5 h-5 text-orange-500" />;
+      case 'Incendio': return <Flame className="w-5 h-5 text-red-500" />;
+      case 'Herido por arma de fuego': return <UserMinus className="w-5 h-5 text-error" />;
       case 'Robo': return <Shield className="w-5 h-5 text-orange-500" />;
       case 'Asalto': return <AlertTriangle className="w-5 h-5 text-red-500" />;
       case 'Homicidio': return <AlertCircle className="w-5 h-5 text-red-600" />;
@@ -33,7 +37,11 @@ export function ReportCard({ report, userLocation }: ReportCardProps) {
   };
 
   const getColor = () => {
-    switch (report.tipo) {
+    switch (report.type) {
+      case 'Robo sin violencia': return 'bg-blue-500/10 border-blue-500/20';
+      case 'Robo con violencia': return 'bg-orange-500/10 border-orange-500/20';
+      case 'Incendio': return 'bg-red-500/10 border-red-500/20';
+      case 'Herido por arma de fuego': return 'bg-error/10 border-error/20';
       case 'Robo': return 'bg-orange-500/10 border-orange-500/20';
       case 'Asalto': return 'bg-red-500/10 border-red-500/20';
       case 'Homicidio': return 'bg-red-900/20 border-red-800/20';
@@ -52,10 +60,10 @@ export function ReportCard({ report, userLocation }: ReportCardProps) {
 
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start">
-          <h4 className="font-bold text-white text-base leading-tight">{report.tipo}</h4>
+          <h4 className="font-bold text-white text-base leading-tight">{report.type}</h4>
           <span className="text-xs text-white/40 font-mono">{formatTime(report.created_at)}</span>
         </div>
-        <p className="text-sm text-white/60 truncate mt-1">{report.descripcion}</p>
+        <p className="text-sm text-white/60 truncate mt-1">{report.description}</p>
 
         <div className="flex items-center gap-2 mt-3">
           {distanceLabel && (
@@ -64,10 +72,10 @@ export function ReportCard({ report, userLocation }: ReportCardProps) {
               {distanceLabel}
             </span>
           )}
-          {report.verificado && (
+          {report.is_verified && (
             <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#00E0FF] bg-[#00E0FF]/10 px-2 py-1 rounded-md border border-[#00E0FF]/20">
               <CheckCircle2 className="w-3 h-3" />
-              Verificado
+              Confirmado
             </span>
           )}
         </div>

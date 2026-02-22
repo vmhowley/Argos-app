@@ -14,14 +14,14 @@ export function Onboarding() {
       desc: 'Únete a la nueva generación de protección comunitaria con alertas verificadas en tiempo real.'
     },
     {
-      title: 'DATOS VERIFICADOS',
+      title: 'ALERTAS REALES',
       subtitle: 'Cero noticias falsas',
-      desc: 'Nuestro sistema de verificación integrado con la policía asegura 100% de precisión.'
+      desc: 'Nuestro sistema de validación comunitaria asegura que los reportes sean precisos y reales.'
     },
     {
-      title: 'GANA RECOMPENSAS',
-      subtitle: 'Protege tu barrio, gana premios',
-      desc: 'Los vecindarios más activos compiten por mejoras reales de seguridad cada mes.'
+      title: 'COMUNIDAD SEGURA',
+      subtitle: 'Protege tu barrio, juntos',
+      desc: 'Los vecindarios más unidos ayudan a crear un entorno más seguro para todos sus habitantes.'
     },
   ];
 
@@ -43,7 +43,7 @@ export function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-[#110505] flex flex-col items-center justify-between px-6 py-12 relative overflow-hidden font-display">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-between px-6 py-12 relative overflow-hidden font-display">
 
       {/* Background Elements */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-[100px] pointer-events-none"></div>
@@ -105,7 +105,18 @@ export function Onboarding() {
                 Ingresar
               </button>
               <button
-                onClick={() => navigate('/signup')}
+                onClick={() => navigate('/signup', {
+                  state: {
+                    premium: false,
+                    level: 1,
+                    xp: 0,
+                    owl_type: 'polluelo',
+                    rank_title: 'Polluelo Novato',
+                    recreations_used: 0,
+                    role: 'user',
+                    created_at: new Date().toISOString()
+                  }
+                })}
                 className="bg-white text-black font-semibold py-4 rounded-full hover:bg-gray-200 transition-colors"
               >
                 Crear Cuenta

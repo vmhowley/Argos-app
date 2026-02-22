@@ -1,33 +1,47 @@
+export type IncidentType = 'Robo sin violencia' | 'Robo con violencia' | 'Incendio' | 'Herido por arma de fuego' | 'Robo' | 'Asalto' | 'Homicidio' | 'Vandalismo';
+
 export interface Report {
   id: string;
   user_id: string;
-  tipo: 'Robo' | 'Asalto' | 'Homicidio' | 'Vandalismo';
+  type: IncidentType;
   lat: number;
   lng: number;
-  descripcion: string;
+  description: string;
   foto_url?: string;
-  folio?: string;
-  verificado: boolean;
+  has_photo?: boolean;
+  confirmations?: number;
+  is_verified: boolean;
+  created_at: string;
+}
+
+export interface ReportComment {
+  id: string;
+  report_id: string;
+  user_id: string;
+  content: string;
   created_at: string;
 }
 
 export interface Barrio {
   id: string;
-  nombre: string;
-  reportes_total: number;
-  verificados: number;
-  premio_actual: string;
+  name: string;
+  total_reports: number;
+  verified_count: number;
   created_at: string;
 }
 
 export interface UserProfile {
   id: string;
-  anonimo_id: string;
-  reportes_total: number;
-  reportes_verificados: number;
-  barrio: string;
+  anonymous_id: string;
+  total_reports: number;
+  verified_reports: number;
+  neighborhood: string;
   premium: boolean;
-  recreaciones_usadas: number;
+  level: number;
+  xp: number;
+  owl_type: 'polluelo' | 'centinela' | 'sabio';
+  rank_title: string;
+  recreations_used: number;
   role?: 'user' | 'admin';
   // Extended Profile Fields (Optional)
   blood_type?: string;

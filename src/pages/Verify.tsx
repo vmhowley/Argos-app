@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, MapPin, Clock, User } from 'lucide-react';
+import { ArrowLeft, CheckCircle, MapPin, Clock } from 'lucide-react';
 import { Report } from '../types';
 import { getUnverifiedReports, verifyReport } from '../services/reportService';
 import { getUserProfile } from '../services/authService';
@@ -109,10 +109,10 @@ export function Verify() {
           report.lng
         );
 
-        // Check if user is within 300 meters
-        if (distance > 300) {
+        // Check if user is within 250 meters
+        if (distance > 250) {
           alert(
-            `Debes estar a menos de 300 metros del incidente para verificarlo.\n\n` +
+            `Debes estar a menos de 250 metros del incidente para verificarlo.\n\n` +
             `Distancia actual: ${Math.round(distance)} metros`
           );
           setVerifying(null);
@@ -157,7 +157,7 @@ export function Verify() {
         >
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
-        <h1 className="text-3xl font-black italic uppercase tracking-tighter mb-2">Verificar Reportes</h1>
+        <h1 className="text-3xl font-black italic uppercase tracking-tighter mb-2">Validar Reportes</h1>
         <p className="text-white/60 text-sm font-medium">
           Ayuda a la comunidad validando alertas cercanas
         </p>
@@ -218,7 +218,6 @@ export function Verify() {
                           markers={[report]}
                           height="100%"
                           interactive={false}
-                          theme="dark"
                         />
                         <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#1A0A0A] to-transparent opacity-50"></div>
                       </div>
@@ -227,7 +226,7 @@ export function Verify() {
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <h3 className="text-2xl font-black italic uppercase tracking-tight text-white mb-1">
-                              {report.tipo}
+                              {report.type}
                             </h3>
                             <div className="flex items-center gap-2 text-xs font-bold text-white/40 uppercase tracking-widest">
                               <Clock className="w-3 h-3" />
@@ -245,7 +244,7 @@ export function Verify() {
                           )}
                         </div>
 
-                        <p className="text-white/80 text-sm leading-relaxed mb-6 font-medium">{report.descripcion}</p>
+                        <p className="text-white/80 text-sm leading-relaxed mb-6 font-medium">{report.description}</p>
 
                         <div className="flex items-center gap-2 text-xs text-white/40 mb-6 bg-white/5 p-3 rounded-xl">
                           <MapPin className="w-4 h-4 text-primary" />
@@ -254,20 +253,14 @@ export function Verify() {
                           </span>
                         </div>
 
-                        {report.folio && (
-                          <div className="mb-6 p-4 bg-blue-900/10 border border-blue-500/20 rounded-xl">
-                            <p className="text-xs font-bold text-blue-400 uppercase tracking-widest">
-                              Folio policial: {report.folio}
-                            </p>
-                          </div>
-                        )}
+                        {/* Folio removed */}
 
                         <button
                           onClick={() => handleVerify(report.id)}
                           disabled={verifying === report.id || !!isOwnReport}
                           className={`w-full font-bold py-4 rounded-xl transition-all flex items-center justify-center gap-2 uppercase tracking-wider text-sm ${isOwnReport
-                              ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5'
-                              : 'bg-green-600 hover:bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.5)]'
+                            ? 'bg-white/5 text-white/20 cursor-not-allowed border border-white/5'
+                            : 'bg-green-600 hover:bg-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:shadow-[0_0_30px_rgba(34,197,94,0.5)]'
                             }`}
                         >
                           {verifying === report.id ? (
