@@ -7,7 +7,7 @@ export function SOS() {
   const [activating, setActivating] = useState(false);
   const [active, setActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(3);
-  const [call911Timer, setCall911Timer] = useState(30);
+  const [call911Timer, setCall911Timer] = useState(5);
   const [streamAudio, setStreamAudio] = useState(false);
   const navigate = useNavigate();
 

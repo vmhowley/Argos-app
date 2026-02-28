@@ -12,9 +12,11 @@ import { SOS } from './pages/SOS';
 import { Verify } from './pages/Verify';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
+import { usePushNotifications } from './hooks/usePushNotifications';
 function App() {
   // Automatic anonymous login removed to prevent duplicate users
 
+  usePushNotifications();
 
   return (
     <BrowserRouter>

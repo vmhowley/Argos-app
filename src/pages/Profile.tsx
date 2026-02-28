@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Shield, Droplets, AlertTriangle, Pill, Phone, Stethoscope, Save, Star, Zap } from 'lucide-react';
+import { ChevronLeft, Shield, Droplets, AlertTriangle, Pill, Phone, Stethoscope, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUserProfile, updateUserProfile } from '../services/authService';
 import { UserProfile } from '../types';
@@ -177,55 +177,7 @@ export function Profile() {
                     </div>
                 </div>
 
-                {/* Premium Account */}
-                <div className={cn(
-                    "relative overflow-hidden rounded-2xl p-6 border transition-all",
-                    profile.premium
-                        ? "bg-primary/10 border-primary/50"
-                        : "bg-white/5 border-white/5"
-                )}>
-                    {profile.premium && (
-                        <div className="absolute top-0 right-0 bg-primary text-background font-black text-[8px] px-3 py-1 rounded-bl-xl uppercase tracking-widest">Premium Active</div>
-                    )}
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", profile.premium ? "bg-primary text-background" : "bg-white/10 text-white/40")}>
-                            <Star className={cn("w-6 h-6", profile.premium && "fill-background")} />
-                        </div>
-                        <div>
-                            <p className="font-black text-lg uppercase tracking-tighter">Atenea Premium</p>
-                            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                                {profile.premium ? 'Acceso total desbloqueado' : 'Mejora tu seguridad hoy'}
-                            </p>
-                        </div>
-                    </div>
-
-                    {!profile.premium ? (
-                        <div className="space-y-4">
-                            <ul className="text-[10px] font-bold text-white/60 space-y-1">
-                                <li className="flex items-center gap-2 decoration-primary underline-offset-2">• Sin anuncios publicitarios</li>
-                                <li className="flex items-center gap-2">• Streaming de audio en SOS</li>
-                                <li className="flex items-center gap-2">• Notificaciones de barrio prioritarias</li>
-                            </ul>
-                            <button
-                                onClick={async () => {
-                                    const success = confirm('¿Deseas suscribirte a Atenea Premium por $9.99/mes?');
-                                    if (success) {
-                                        await updateUserProfile({ premium: true });
-                                        loadProfile();
-                                    }
-                                }}
-                                className="w-full bg-primary text-background font-black py-4 rounded-xl uppercase tracking-tighter text-sm shadow-[0_4px_15px_rgba(255,215,0,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
-                            >
-                                Subscribirse - $9.99/mes
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-widest bg-primary/10 w-fit px-3 py-1 rounded-full border border-primary/20">
-                            <Zap className="w-3 h-3 fill-primary" />
-                            Operativo Prioritario
-                        </div>
-                    )}
-                </div>
+                {/* Premium Account Removed */}
 
                 {/* Emergency Contact */}
                 <div className="space-y-3">

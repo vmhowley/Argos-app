@@ -14,6 +14,8 @@
     "@supabase/supabase-js": "^2.57.4",
     "@types/leaflet": "^1.9.21",
     "clsx": "^2.1.1",
+    "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
     "maplibre-gl": "^5.16.0",

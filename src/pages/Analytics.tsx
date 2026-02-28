@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
-import { TrendingUp, AlertCircle, MapPin, Filter } from 'lucide-react';
+import { TrendingUp, AlertCircle, MapPin, Filter, Download } from 'lucide-react';
 import { supabase } from '../config/supabase';
 import { Barrio, Report } from '../types';
 import { getAllReports } from '../services/reportService';
 import { calculateDistance, getUserLocation } from '../utils/geoUtils';
 import { cn } from '@/lib/utils';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export function Analytics() {
   const [barrios, setBarrios] = useState<Barrio[]>([]);
@@ -71,6 +73,65 @@ export function Analytics() {
     return true;
   });
 
+  const exportCSV = () => {
+    const headers = ['Tipo', 'Fecha', 'Ubicación (Lat, Lng)', 'Verificado'];
+    const rows = filteredReports.map(r => [
+      r.type,
+      new Date(r.created_at).toLocaleDateString(),
+      `"${r.lat}, ${r.lng}"`,
+      r.is_verified ? 'Sí' : 'No'
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8,"
+      + headers.join(",") + "\n"
+      + rows.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "reportes_argos.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Reporte de Seguridad Argos', 14, 15);
+
+    // Summary
+    doc.setFontSize(10);
+    doc.text(`Total Reportes: ${filteredReports.length}`, 14, 25);
+    doc.text(`Zonas Monitoreadas: ${barrios.length}`, 80, 25);
+
+    // Distribution
+    const distribution = filteredReports.reduce((acc, r) => {
+      acc[r.type] = (acc[r.type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    doc.text('Distribución por Tipo:', 14, 35);
+    let y = 42;
+    Object.entries(distribution).forEach(([type, count]) => {
+      doc.text(`- ${type}: ${count}`, 14, y);
+      y += 6;
+    });
+
+    const tableData = filteredReports.slice(0, 50).map(r => [
+      r.type,
+      new Date(r.created_at).toLocaleDateString(),
+      `${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}`,
+      r.is_verified ? 'Sí' : 'No'
+    ]);
+
+    (doc as any).autoTable({
+      startY: Math.max(y + 10, 60),
+      head: [['Tipo', 'Fecha', 'Ubicación', 'Verificado']],
+      body: tableData,
+    });
+
+    doc.save('reportes_argos.pdf');
+  };
+
   return (
     <div className="min-h-screen bg-[#110505] text-white font-display pb-24">
 
@@ -89,6 +150,14 @@ export function Analytics() {
             sub="Monitoreadas"
           />
         </div>
+        <div className="flex gap-2 mt-4">
+          <button onClick={exportCSV} className="flex-1 bg-white/5 border border-white/10 text-white text-xs font-bold uppercase tracking-widest py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+            <Download className="w-4 h-4" /> CSV
+          </button>
+          <button onClick={exportPDF} className="flex-1 bg-primary/20 text-primary border border-primary/30 text-xs font-bold uppercase tracking-widest py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-primary/30 transition-colors">
+            <Download className="w-4 h-4" /> PDF
+          </button>
+        </div>
       </div>
 
       <div className="px-6 space-y-4">
@@ -105,7 +174,7 @@ export function Analytics() {
           <FilterSelect
             value={crimeFilter}
             onChange={(val: string) => setCrimeFilter(val)}
-            options={['Todos', 'Robo', 'Asalto', 'Homicidio']}
+            options={['Todos', 'Robo sin violencia', 'Robo con violencia', 'Incendio', 'Herido por arma de fuego', 'Robo', 'Asalto', 'Homicidio', 'Vandalismo']}
           />
         </div>
 
@@ -116,24 +185,22 @@ export function Analytics() {
           </h3>
           {/* Visual Bars instead of Pie Chart for cleaner UI */}
           <div className="space-y-4">
-            <DistributionBar
-              label="Robo"
-              count={filteredReports.filter(r => r.type === 'Robo').length}
-              total={filteredReports.length || 1}
-              color="bg-orange-500"
-            />
-            <DistributionBar
-              label="Asalto"
-              count={filteredReports.filter(r => r.type === 'Asalto').length}
-              total={filteredReports.length || 1}
-              color="bg-red-500"
-            />
-            <DistributionBar
-              label="Homicidio"
-              count={filteredReports.filter(r => r.type === 'Homicidio').length}
-              total={filteredReports.length || 1}
-              color="bg-red-900"
-            />
+            {Object.entries(filteredReports.reduce((acc, r) => {
+              acc[r.type] = (acc[r.type] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>))
+              .sort(([, a], [, b]) => b - a)
+              .slice(0, 5) // top 5
+              .map(([type, count], i) => (
+                <DistributionBar
+                  key={type}
+                  label={type}
+                  count={count}
+                  total={filteredReports.length || 1}
+                  color={i === 0 ? "bg-red-600" : i === 1 ? "bg-orange-500" : i === 2 ? "bg-yellow-500" : "bg-blue-500"}
+                />
+              ))
+            }
           </div>
         </div>
 
