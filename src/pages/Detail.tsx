@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Clock, MapPin, CheckCircle2, MessageSquare, Send, Trash2 } from 'lucide-react';
+import { ArrowLeft, Users, Clock, MapPin, CheckCircle2, MessageSquare, Send, Trash2, Download } from 'lucide-react';
 import { Report, ReportComment } from '../types';
+import jsPDF from 'jspdf';
 import { Map } from '../components/common/Map';
 import { supabase } from '../config/supabase';
 import { formatTime } from '../utils/dateUtils';
@@ -92,6 +93,50 @@ export function Detail() {
     });
   };
 
+  const exportCSV = () => {
+    if (!report) return;
+    const headers = ['ID', 'Tipo', 'Fecha', 'Ubicación (Lat, Lng)', 'Descripción', 'Verificado'];
+    const row = [
+      report.id,
+      report.type,
+      new Date(report.created_at).toLocaleDateString(),
+      `"${report.lat}, ${report.lng}"`,
+      `"${report.description.replace(/"/g, '""')}"`,
+      report.is_verified ? 'Sí' : 'No'
+    ];
+
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF"
+      + headers.join(",") + "\n"
+      + row.join(",");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `reporte_${report.id.slice(0, 6)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportPDF = () => {
+    if (!report) return;
+    const doc = new jsPDF();
+    doc.text('Detalle de Reporte Argos', 14, 15);
+
+    doc.setFontSize(11);
+    doc.text(`ID: #${report.id}`, 14, 25);
+    doc.text(`Tipo: ${report.type}`, 14, 32);
+    doc.text(`Fecha: ${new Date(report.created_at).toLocaleString()}`, 14, 39);
+    doc.text(`Verificado: ${report.is_verified ? 'Sí' : 'No'}`, 14, 46);
+    doc.text(`Ubicación: ${Number(report.lat).toFixed(4)}, ${Number(report.lng).toFixed(4)}`, 14, 53);
+
+    doc.text('Descripción:', 14, 63);
+    const splitDescription = doc.splitTextToSize(report.description, 180);
+    doc.text(splitDescription, 14, 70);
+
+    doc.save(`reporte_${report.id.slice(0, 6)}.pdf`);
+  };
+
   if (!report) {
     return (
       <div className="min-h-screen bg-[#110505] flex items-center justify-center">
@@ -141,6 +186,15 @@ export function Detail() {
               Reporte Confirmado
             </div>
           )}
+
+          <div className="flex gap-2 mt-6">
+            <button onClick={exportCSV} className="flex-1 bg-white/5 border border-white/10 text-white text-xs font-bold uppercase tracking-widest py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
+              <Download className="w-4 h-4" /> Descargar CSV
+            </button>
+            <button onClick={exportPDF} className="flex-1 bg-primary/20 text-primary border border-primary/30 text-xs font-bold uppercase tracking-widest py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-primary/30 transition-colors">
+              <Download className="w-4 h-4" /> Descargar PDF
+            </button>
+          </div>
         </div>
 
         {/* Map Location */}
