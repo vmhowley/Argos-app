@@ -33,7 +33,7 @@ export function Detail() {
   const loadReport = async () => {
     const { data, error } = await supabase
       .from('reports')
-      .select('*')
+      .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
       .eq('id', id)
       .single();
 
@@ -95,7 +95,7 @@ export function Detail() {
 
   const exportCSV = () => {
     if (!report) return;
-    const headers = ['ID', 'Tipo', 'Fecha', 'Ubicación (Lat, Lng)', 'Descripción', 'Verificado'];
+    const headers = ['ID', 'type', 'Fecha', 'Ubicación (Lat, Lng)', 'Descripción', 'Verificado'];
     const row = [
       report.id,
       report.type,

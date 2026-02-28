@@ -45,7 +45,7 @@ export function Analytics() {
   const loadBarrios = async () => {
     const { data, error } = await supabase
       .from('barrios')
-      .select('*')
+      .select('id, name, total_reports, verified_count, current_prize, created_at')
       .order('verified_count', { ascending: false })
       .limit(5);
 

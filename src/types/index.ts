@@ -8,7 +8,6 @@ export interface Report {
   lng: number;
   description: string;
   foto_url?: string;
-  has_photo?: boolean;
   confirmations?: number;
   is_verified: boolean;
   created_at: string;

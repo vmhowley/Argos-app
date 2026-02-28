@@ -48,7 +48,7 @@ export async function getUserProfile(): Promise<UserProfile | null> {
 
   const { data, error } = await supabase
     .from('users_profiles')
-    .select('*')
+    .select('id, anonymous_id, total_reports, verified_reports, neighborhood, premium, level, xp, owl_type, rank_title, recreations_used, role, blood_type, allergies, medications, emergency_contact_name, emergency_contact_phone, created_at')
     .eq('id', userId)
     .maybeSingle(); // Use maybeSingle() to handle 0 rows without error
 
@@ -68,7 +68,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>) {
     .from('users_profiles')
     .update(updates)
     .eq('id', userId)
-    .select()
+    .select('id, anonymous_id, total_reports, verified_reports, neighborhood, premium, level, xp, owl_type, rank_title, recreations_used, role, blood_type, allergies, medications, emergency_contact_name, emergency_contact_phone, created_at')
     .single();
 
   return { data, error };
@@ -82,7 +82,7 @@ export async function updateUsername(newUsername: string) {
     .from('users_profiles')
     .update({ anonymous_id: newUsername })
     .eq('id', userId)
-    .select()
+    .select('id, anonymous_id, total_reports, verified_reports, neighborhood, premium, level, xp, owl_type, rank_title, recreations_used, role, blood_type, allergies, medications, emergency_contact_name, emergency_contact_phone, created_at')
     .single();
 
   return { data, error };

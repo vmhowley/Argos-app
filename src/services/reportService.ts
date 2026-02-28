@@ -4,7 +4,7 @@ import { supabase } from '../config/supabase';
 export const getReports = async (filter: string = 'all'): Promise<Report[]> => {
   let query = supabase
     .from('reports')
-    .select('*')
+    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
     .eq('is_verified', true)
     .order('created_at', { ascending: false });
 
@@ -28,7 +28,7 @@ export const createReport = async (report: Omit<Report, 'id' | 'created_at'>): P
 
   const { data: recentReports, error: fetchError } = await supabase
     .from('reports')
-    .select('*')
+    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
     .eq('type', report.type)
     .gt('created_at', tenMinutesAgo);
 
@@ -47,17 +47,22 @@ export const createReport = async (report: Omit<Report, 'id' | 'created_at'>): P
           description: `${duplicate.description}\n(Actualización: ${report.description})`
         })
         .eq('id', duplicate.id)
-        .select()
+        .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
         .single();
       return updated;
     }
   }
 
   // 2. Insert new report
+  const reportToInsert = { ...report, confirmations: 0 };
+  if ('has_photo' in reportToInsert) {
+    delete (reportToInsert as any).has_photo;
+  }
+
   const { data, error } = await supabase
     .from('reports')
-    .insert([{ ...report, confirmations: 0, has_photo: !!report.foto_url }])
-    .select()
+    .insert([reportToInsert])
+    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
     .single();
 
   if (error) {
@@ -88,7 +93,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 export const getUnverifiedReports = async (): Promise<Report[]> => {
   const { data, error } = await supabase
     .from('reports')
-    .select('*')
+    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
     .eq('is_verified', false)
     .order('created_at', { ascending: false });
 
@@ -106,12 +111,12 @@ export const verifyReport = async (reportId: string): Promise<boolean> => {
   // Get current confirmations
   const { data: current } = await supabase
     .from('reports')
-    .select('confirmations, has_photo')
+    .select('confirmations, foto_url')
     .eq('id', reportId)
     .single();
 
   const newCount = (current?.confirmations || 0) + 1;
-  const shouldBeVerified = newCount >= 7 || (newCount >= 3 && current?.has_photo);
+  const shouldBeVerified = newCount >= 7 || (newCount >= 3 && !!current?.foto_url);
 
   const { error } = await supabase
     .from('reports')
@@ -133,7 +138,7 @@ export const verifyReport = async (reportId: string): Promise<boolean> => {
 export const getAllReports = async (): Promise<Report[]> => {
   const { data, error } = await supabase
     .from('reports')
-    .select('*')
+    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -147,7 +152,7 @@ export const getAllReports = async (): Promise<Report[]> => {
 export const getUserReports = async (userId: string): Promise<Report[]> => {
   const { data, error } = await supabase
     .from('reports')
-    .select('*')
+    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
@@ -162,7 +167,7 @@ export const getUserReports = async (userId: string): Promise<Report[]> => {
 export const getUserVerifiedReports = async (userId: string): Promise<Report[]> => {
   const { data, error } = await supabase
     .from('reports')
-    .select('*')
+    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
     .eq('user_id', userId)
     .eq('is_verified', true)
     .order('created_at', { ascending: false });

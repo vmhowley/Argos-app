@@ -121,7 +121,7 @@ export function Home() {
                 <div className="group relative flex flex-col items-center">
                   <div className={cn(
                     "w-10 h-10 rounded-full border-2 border-white shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-center justify-center transition-transform hover:scale-110",
-                    (report.confirmations || 0) >= 7 || ((report.confirmations || 0) >= 3 && report.has_photo) ? 'bg-success' :
+                    (report.confirmations || 0) >= 7 || ((report.confirmations || 0) >= 3 && !!report.foto_url) ? 'bg-success' :
                       (report.confirmations || 0) >= 3 ? 'bg-yellow-500' :
                         report.type === 'Herido por arma de fuego' || report.type === 'Homicidio' ? 'bg-error' :
                           report.type === 'Incendio' ? 'bg-red-600' :
