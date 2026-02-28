@@ -35,7 +35,7 @@ export const createReport = async (report: Omit<Report, 'id' | 'created_at'>): P
   if (!fetchError && recentReports) {
     const duplicate = recentReports.find(r => {
       const dist = calculateDistance(r.lat, r.lng, report.lat, report.lng);
-      return dist < 200;
+      return dist < 500;
     });
 
     if (duplicate) {

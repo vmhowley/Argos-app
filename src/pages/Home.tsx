@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Bell, Compass, Flame } from 'lucide-react';
 import { IncidentType } from '../types';
@@ -6,13 +6,22 @@ import { useReports } from '../hooks/useReports';
 import { Map, MapControls, MapMarker, MarkerContent, MarkerPopup } from "@/components/ui/map";
 import { ReportCard } from '../components/features/reports/ReportCard';
 import { cn } from '@/lib/utils';
-import { getUserLocation } from '../utils/geoUtils';
+import { getUserLocation, calculateDistance } from '../utils/geoUtils';
 
 export function Home() {
   const [filter, setFilter] = useState<'all' | IncidentType>('all');
-  const { reports } = useReports(filter);
+  const { reports: allReports } = useReports(filter);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+
+  const reports = useMemo(() => {
+    return allReports.filter(report => {
+      if (!userLocation) return false;
+      const distance = calculateDistance(userLocation.lat, userLocation.lng, report.lat, report.lng);
+      return distance <= 500;
+    });
+  }, [allReports, userLocation]);
+
   const [viewState, setViewState] = useState({
     center: [-122.4194, 37.7749] as [number, number],
     zoom: 13

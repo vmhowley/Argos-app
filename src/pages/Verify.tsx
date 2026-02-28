@@ -25,27 +25,11 @@ export function Verify() {
     setLoading(true);
 
     try {
-      // Get user profile to check for admin role
-      const userProfile = await getUserProfile();
-      const isAdmin = userProfile?.role === 'admin';
-      setCurrentUserId(userProfile?.id || null);
-      console.log(userProfile);
-      // Fetch all unverified reports
       const allReports = await getUnverifiedReports();
+      const userProfile = await getUserProfile();
+      setCurrentUserId(userProfile?.id || null);
 
-      if (isAdmin) {
-        // Admins see all reports
-        setReports(allReports);
-        // Try to get location just for the "nearby" message, but don't fail if we can't
-        try {
-          const location = await getUserLocation();
-          setUserLocation(location);
-        } catch (e) {
-          console.log('Admin location not available, ignoring');
-        }
-        setLocationError(false);
-      } else {
-        // Regular users: Get location and filter by 5km radius
+      try {
         const location = await getUserLocation();
         setUserLocation(location);
 
@@ -56,18 +40,18 @@ export function Verify() {
             report.lat,
             report.lng
           );
-          return distance <= 5000; // 5km in meters
+          return distance <= 200;
         });
-
         setReports(nearbyReports);
         setLocationError(false);
+      } catch (e) {
+        console.error('Location error:', e);
+        setLocationError(true);
+        // Do not show all reports anymore, keep empty list as requested
+        setReports([]);
       }
     } catch (error) {
       console.error('Error loading reports:', error);
-      setLocationError(true);
-      // Still load all reports if location fails (fallback behavior)
-      const allReports = await getUnverifiedReports();
-      setReports(allReports);
     }
 
     setLoading(false);
@@ -109,10 +93,10 @@ export function Verify() {
           report.lng
         );
 
-        // Check if user is within 250 meters
-        if (distance > 250) {
+        // Check if user is within 200 meters
+        if (distance > 500) {
           alert(
-            `Debes estar a menos de 250 metros del incidente para verificarlo.\n\n` +
+            `Debes estar a menos de 500 metros del incidente para verificarlo.\n\n` +
             `Distancia actual: ${Math.round(distance)} metros`
           );
           setVerifying(null);

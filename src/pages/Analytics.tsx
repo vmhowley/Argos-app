@@ -72,7 +72,7 @@ export function Analytics() {
     if (!timeMatch) return false;
     if (locationFilter && userLocation) {
       const distance = calculateDistance(userLocation.lat, userLocation.lng, report.lat, report.lng);
-      if (distance > 200) return false;
+      if (distance > 500) return false;
     }
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
@@ -208,7 +208,7 @@ export function Analytics() {
         {/* Filters Scroll */}
         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
           <FilterChip active={locationFilter} onClick={() => setLocationFilter(!locationFilter)} icon={MapPin}>
-            Mi Sector {locationFilter && '(200m)'}
+            Mi Sector {locationFilter && '(500m)'}
           </FilterChip>
           <FilterSelect
             value={timeFilter}
