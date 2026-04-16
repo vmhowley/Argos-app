@@ -58,3 +58,9 @@ export interface SOSPayload {
   audioBlob?: Blob;
   timestamp: string;
 }
+
+export interface ServiceResponse<T> {
+  success: boolean;
+  data: T | null;
+  error: string | null;
+}

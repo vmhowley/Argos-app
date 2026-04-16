@@ -1,34 +1,34 @@
-import { Report } from '../types';
+import { Report, ServiceResponse } from '../types';
 import { supabase } from '../config/supabase';
+import { calculateDistance } from '../utils/geoUtils';
+import { handleServiceCall } from '../utils/serviceUtils';
 
-export const getReports = async (filter: string = 'all'): Promise<Report[]> => {
+export const REPORT_FIELDS = 'id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at';
+
+export const getReports = async (filter: string = 'all', includeUnverified: boolean = true): Promise<ServiceResponse<Report[]>> => {
   let query = supabase
     .from('reports')
-    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
-    .eq('is_verified', true)
+    .select(REPORT_FIELDS)
     .order('created_at', { ascending: false });
+
+  if (!includeUnverified) {
+    query = query.eq('is_verified', true);
+  }
 
   if (filter !== 'all') {
     query = query.eq('type', filter);
   }
 
-  const { data, error } = await query;
-
-  if (error) {
-    console.error('Error fetching reports:', error);
-    return [];
-  }
-
-  return data || [];
+  return handleServiceCall(query);
 };
 
-export const createReport = async (report: Omit<Report, 'id' | 'created_at'>): Promise<Report | null> => {
-  // 1. Check for duplicates (< 200m and < 10min)
+export const createReport = async (report: Omit<Report, 'id' | 'created_at'>): Promise<ServiceResponse<Report>> => {
+  // 1. Check for duplicates (< 500m and < 10min)
   const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
 
   const { data: recentReports, error: fetchError } = await supabase
     .from('reports')
-    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
+    .select(REPORT_FIELDS)
     .eq('type', report.type)
     .gt('created_at', tenMinutesAgo);
 
@@ -40,16 +40,17 @@ export const createReport = async (report: Omit<Report, 'id' | 'created_at'>): P
 
     if (duplicate) {
       // Merge: Add confirmation to the existing one
-      const { data: updated } = await supabase
+      const updateCall = supabase
         .from('reports')
         .update({
           confirmations: (duplicate.confirmations || 0) + 1,
           description: `${duplicate.description}\n(Actualización: ${report.description})`
         })
         .eq('id', duplicate.id)
-        .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
+        .select(REPORT_FIELDS)
         .single();
-      return updated;
+      
+      return handleServiceCall(updateCall);
     }
   }
 
@@ -59,123 +60,79 @@ export const createReport = async (report: Omit<Report, 'id' | 'created_at'>): P
     delete (reportToInsert as any).has_photo;
   }
 
-  const { data, error } = await supabase
+  const insertCall = supabase
     .from('reports')
     .insert([reportToInsert])
-    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
+    .select(REPORT_FIELDS)
     .single();
 
-  if (error) {
-    console.error('Error creating report:', error);
-    return null;
-  }
-
-  return data;
+  return handleServiceCall(insertCall);
 };
 
-// Add calculateDistance helper since it's needed here
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371e3; // meters
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δφ = (lat2 - lat1) * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-    Math.cos(φ1) * Math.cos(φ2) *
-    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-  return R * c;
-}
-
-
-export const getUnverifiedReports = async (): Promise<Report[]> => {
-  const { data, error } = await supabase
+export const getUnverifiedReports = async (): Promise<ServiceResponse<Report[]>> => {
+  const query = supabase
     .from('reports')
-    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
+    .select(REPORT_FIELDS)
     .eq('is_verified', false)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching unverified reports:', error);
-    return [];
-  }
-
-  return data || [];
+  return handleServiceCall(query);
 };
 
-export const verifyReport = async (reportId: string): Promise<boolean> => {
-  console.log('Attempting to verify report:', reportId);
-
+export const verifyReport = async (reportId: string): Promise<ServiceResponse<Report>> => {
   // Get current confirmations
-  const { data: current } = await supabase
+  const { data: current, error: fetchError } = await supabase
     .from('reports')
     .select('confirmations, foto_url')
     .eq('id', reportId)
     .single();
 
+  if (fetchError) {
+    return { success: false, data: null, error: fetchError.message };
+  }
+
   const newCount = (current?.confirmations || 0) + 1;
   const shouldBeVerified = newCount >= 7 || (newCount >= 3 && !!current?.foto_url);
 
-  const { error } = await supabase
+  const updateCall = supabase
     .from('reports')
     .update({
       confirmations: newCount,
       is_verified: shouldBeVerified
     })
     .eq('id', reportId)
-    .select();
+    .select(REPORT_FIELDS)
+    .single();
 
-  if (error) {
-    console.error('Error verifying report:', error);
-    return false;
-  }
-
-  return true;
+  return handleServiceCall(updateCall);
 };
 
-export const getAllReports = async (): Promise<Report[]> => {
-  const { data, error } = await supabase
+export const getAllReports = async (): Promise<ServiceResponse<Report[]>> => {
+  const query = supabase
     .from('reports')
-    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
+    .select(REPORT_FIELDS)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching all reports:', error);
-    return [];
-  }
-
-  return data || [];
+  return handleServiceCall(query);
 };
 
-export const getUserReports = async (userId: string): Promise<Report[]> => {
-  const { data, error } = await supabase
+export const getUserReports = async (userId: string): Promise<ServiceResponse<Report[]>> => {
+  const query = supabase
     .from('reports')
-    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
+    .select(REPORT_FIELDS)
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching user reports:', error);
-    return [];
-  }
-
-  return data || [];
+  return handleServiceCall(query);
 };
 
-export const getUserVerifiedReports = async (userId: string): Promise<Report[]> => {
-  const { data, error } = await supabase
+export const getUserVerifiedReports = async (userId: string): Promise<ServiceResponse<Report[]>> => {
+  const query = supabase
     .from('reports')
-    .select('id, user_id, type, lat, lng, description, foto_url, is_verified, confirmations, created_at')
+    .select(REPORT_FIELDS)
     .eq('user_id', userId)
     .eq('is_verified', true)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching user verified reports:', error);
-    return [];
-  }
-
-  return data || [];
+  return handleServiceCall(query);
 };

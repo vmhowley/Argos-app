@@ -1,10 +1,10 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { ensureAuthenticated } from '../../services/authService';
+import { ensureAuthenticated, isAnonymousUser } from '../../services/authService';
 
 export function PublicRoute() {
     const [loading, setLoading] = useState(true);
-    const [authenticated, setAuthenticated] = useState(false);
+    const [shouldRedirect, setShouldRedirect] = useState(false);
 
     useEffect(() => {
         checkAuth();
@@ -13,9 +13,15 @@ export function PublicRoute() {
     const checkAuth = async () => {
         try {
             const session = await ensureAuthenticated();
-            setAuthenticated(!!session);
+            if (session) {
+                const isAnon = await isAnonymousUser();
+                // If they are logged in and NOT anonymous, redirect to home
+                setShouldRedirect(!isAnon);
+            } else {
+                setShouldRedirect(false);
+            }
         } catch (error) {
-            setAuthenticated(false);
+            setShouldRedirect(false);
         } finally {
             setLoading(false);
         }
@@ -27,6 +33,6 @@ export function PublicRoute() {
         </div>;
     }
 
-    // If user is authenticated, redirect to home
-    return authenticated ? <Navigate to="/home" replace /> : <Outlet />;
+    // If registered user is authenticated, redirect to home
+    return shouldRedirect ? <Navigate to="/home" replace /> : <Outlet />;
 }

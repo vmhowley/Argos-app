@@ -11,62 +11,106 @@ export function BottomNav() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
-      {/* Background Container - Compact height */}
-      <div className="bg-[#0A0505]/95 backdrop-blur-xl border-t border-white/5 pb-safe pt-1">
+    <div className="fixed z-[999] bottom-0 left-0 right-0 md:top-0 md:right-auto md:w-28 md:h-screen bg-[#0A0A0C] border-t border-white/5 md:border-t-0 md:border-r transition-all duration-700 font-sans shadow-[0_-20px_80px_rgba(0,0,0,1)]">
+      {/* Background Container */}
+      <div className="h-full pb-safe flex flex-col relative">
+        
+        {/* Animated Accent Line (Mobile) */}
+        <div className="md:hidden absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-50"></div>
+        
+        {/* HUD Decoration Lines (Desktop) */}
+        <div className="hidden md:block absolute inset-0 pointer-events-none opacity-20">
+          <div className="absolute top-1/4 right-0 w-4 h-[1px] bg-primary/40"></div>
+          <div className="absolute bottom-1/4 right-0 w-4 h-[1px] bg-primary/40"></div>
+        </div>
 
-        <div className="relative max-w-md mx-auto px-6 h-[60px] flex justify-between items-center">
+        {/* Mobile: Horizontal, Desktop: Vertical */}
+        <div className="relative w-full mx-auto px-2 md:px-0 h-[72px] md:h-full flex flex-row md:flex-col justify-between items-center md:py-12">
 
           {/* Home */}
           <button
             onClick={() => navigate('/home')}
-            className={cn("flex flex-col items-center gap-0.5 transition-colors w-10", isActive('/home') ? "text-primary" : "text-white/50")}
+            className={cn(
+              "flex flex-col items-center justify-center gap-2 transition-all w-16 md:w-full group relative", 
+              isActive('/home') ? "text-primary" : "text-white/40 hover:text-white/70"
+            )}
+            aria-label="Mapa"
           >
-            <Compass className="w-5 h-5" />
-            <span className="text-[9px] font-medium tracking-wide">Mapa</span>
+            {isActive('/home') && (
+              <div className="absolute -top-1 md:top-auto md:-left-1 w-10 h-[3px] md:w-[3px] md:h-10 bg-primary shadow-[0_0_15px_rgba(255,215,0,0.9)] rounded-full animate-in fade-in zoom-in duration-500"></div>
+            )}
+            <Compass className={cn("w-6 h-6 md:w-8 md:h-8 transition-all group-hover:scale-110", isActive('/home') && "drop-shadow-[0_0_10px_rgba(255,215,0,0.5)]")} />
+            <span className="text-[9px] font-black uppercase tracking-[0.25em]">Mapa</span>
           </button>
 
-          {/* Alerts */}
+          {/* Intel */}
           <button
             onClick={() => navigate('/analytics')}
-            className={cn("flex flex-col items-center gap-0.5 transition-colors w-10", isActive('/analytics') ? "text-primary" : "text-white/50")}
+            className={cn(
+              "flex flex-col items-center justify-center gap-2 transition-all w-16 md:w-full group relative", 
+              isActive('/analytics') ? "text-blue-500" : "text-white/40 hover:text-white/70"
+            )}
+            aria-label="Intel"
           >
-            <Shield className="w-5 h-5" />
-            <span className="text-[9px] font-medium tracking-wide">Alertas</span>
+            {isActive('/analytics') && (
+              <div className="absolute -top-1 md:top-auto md:-left-1 w-10 h-[3px] md:w-[3px] md:h-10 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.9)] rounded-full animate-in fade-in zoom-in duration-500"></div>
+            )}
+            <Shield className="w-6 h-6 md:w-8 md:h-8 transition-all group-hover:scale-110" />
+            <span className="text-[9px] font-black uppercase tracking-[0.25em]">Intel</span>
           </button>
 
-          {/* Main Action: New Report - Floating above (Smaller) */}
-          <div className="relative -top-5">
+          {/* Main Action: New Report */}
+          <div className="relative -top-10 md:top-0 md:my-auto shrink-0 animate-in zoom-in duration-700">
             <button
               onClick={() => navigate('/report')}
-              className="w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(242,13,13,0.4)] active:scale-95 group bg-primary border-[3px] border-[#0A0505]"
+              className="w-16 h-16 md:w-20 md:h-20 rounded-[1.75rem] flex items-center justify-center transition-all duration-500 shadow-[0_0_50px_rgba(255,0,0,0.3)] active:scale-90 group bg-error border-2 border-white/10 hover:border-white/20 hover:shadow-[0_0_60px_rgba(255,0,0,0.5)]"
+              aria-label="Reportar"
             >
-              <div className="absolute inset-0 rounded-full bg-primary blur-sm opacity-40 group-hover:opacity-60 transition-opacity"></div>
-              <Plus className="w-6 h-6 text-white relative z-10" strokeWidth={3} />
+              <div className="absolute inset-0 rounded-[1.75rem] bg-error blur-2xl opacity-0 group-hover:opacity-60 transition-opacity duration-700"></div>
+              <Plus className="w-9 h-9 md:w-11 md:h-11 text-white relative z-10 group-hover:rotate-90 transition-transform duration-700" strokeWidth={3} />
             </button>
-            <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 text-[9px] font-bold text-primary uppercase tracking-wider whitespace-nowrap">Reportar</span>
+            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-1">
+               <span className="text-[9px] font-black text-rose-500 uppercase tracking-[0.4em] whitespace-nowrap">Reportar</span>
+               <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.8)]"></div>
+            </div>
           </div>
 
           {/* Verify */}
           <button
             onClick={() => navigate('/verify')}
-            className={cn("flex flex-col items-center gap-0.5 transition-colors w-10", isActive('/verify') ? "text-primary" : "text-white/50")}
+            className={cn(
+              "flex flex-col items-center justify-center gap-2 transition-all w-16 md:w-full group relative", 
+              isActive('/verify') ? "text-success" : "text-white/40 hover:text-white/70"
+            )}
+            aria-label="Validar"
           >
-            <Verified className="w-5 h-5" />
-            <span className="text-[9px] font-medium tracking-wide">Verificar</span>
+            {isActive('/verify') && (
+              <div className="absolute -top-1 md:top-auto md:-left-1 w-10 h-[3px] md:w-[3px] md:h-10 bg-success shadow-[0_0_15px_rgba(34,197,94,0.9)] rounded-full animate-in fade-in zoom-in duration-500"></div>
+            )}
+            <Verified className="w-6 h-6 md:w-8 md:h-8 transition-all group-hover:scale-110" />
+            <span className="text-[9px] font-black uppercase tracking-[0.25em]">Validar</span>
           </button>
 
           {/* Profile */}
           <button
             onClick={() => navigate('/profile')}
-            className={cn("flex flex-col items-center gap-0.5 transition-colors w-10", isActive('/profile') ? "text-primary" : "text-white/50")}
+            className={cn(
+              "flex flex-col items-center justify-center gap-2 transition-all w-16 md:w-full group relative", 
+              isActive('/profile') ? "text-white" : "text-white/40 hover:text-white/70"
+            )}
+            aria-label="Perfil"
           >
-            <User className="w-5 h-5" />
-            <span className="text-[9px] font-medium tracking-wide">Perfil</span>
+            {isActive('/profile') && (
+              <div className="absolute -top-1 md:top-auto md:-left-1 w-10 h-[3px] md:w-[3px] md:h-10 bg-white shadow-[0_0_15px_rgba(255,255,255,0.9)] rounded-full animate-in fade-in zoom-in duration-500"></div>
+            )}
+            <User className="w-6 h-6 md:w-8 md:h-8 transition-all group-hover:scale-110" />
+            <span className="text-[9px] font-black uppercase tracking-[0.25em]">Sede</span>
           </button>
+
 
         </div>
       </div>
     </div>
   );
 }
+

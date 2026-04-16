@@ -3,6 +3,37 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --primary: 43 100% 50%; /* Gold #FFD700 */
+    --background: 240 10% 2%; /* #050506 approx */
+  }
+
+  * {
+    @apply border-white/5;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-[#050506] text-white antialiased font-sans selection:bg-primary/30 selection:text-white;
+  }
+
+  /* Thin Tactical Scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full transition-colors hover:bg-white/20;
+  }
+
   .maplibregl-popup-content {
     @apply bg-transparent ! shadow-none ! p-0 ! rounded-none !;
   }
@@ -10,14 +41,16 @@
   .maplibregl-popup-tip {
     @apply hidden !;
   }
-
-  /* Global body reset for dark theme */
-  body {
-    @apply bg-background text-white antialiased font-display;
-  }
 }
 
 @layer utilities {
+  .ease-out-expo {
+    transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+  }
+
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+  }
 
   /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
@@ -26,14 +59,16 @@
 
   /* Hide scrollbar for IE, Edge and Firefox */
   .no-scrollbar {
-    -ms-overflow-style: none;
-    /* IE and Edge */
-    scrollbar-width: none;
-    /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
   }
 
   /* Additional safe area utilities */
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
   }
 }

@@ -56,56 +56,65 @@ export function SOS() {
 
   if (active) {
     return (
-      <div className="min-h-screen bg-error flex flex-col items-center justify-between p-8 font-display animate-in fade-in duration-500">
-        <div className="w-full flex flex-col items-center pt-10">
-          <div className="w-48 h-48 bg-white/20 rounded-full flex items-center justify-center relative mb-8">
-            <div className="absolute inset-0 bg-white/30 rounded-full animate-ping"></div>
-            <div className="w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center overflow-hidden border-4 border-white/50">
-              {/* Animated Owl Placeholder */}
-              <div className="text-4xl animate-bounce">🦉</div>
-              <span className="text-[10px] font-black text-error mt-1 tracking-tighter">CENTINELA</span>
+      <div className="min-h-screen bg-rose-950/20 backdrop-blur-3xl flex flex-col items-center justify-between p-8 font-sans animate-in fade-in duration-700 relative overflow-hidden">
+        {/* Pulsing Danger background */}
+        <div className="absolute inset-0 bg-gradient-to-b from-rose-600/20 via-transparent to-rose-600/10 animate-pulse-slow"></div>
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-rose-500/50 shadow-[0_0_20px_rgba(244,63,94,0.8)]"></div>
+
+        <div className="w-full flex flex-col items-center pt-16 relative z-10">
+          <div className="w-56 h-56 rounded-full flex items-center justify-center relative mb-10">
+            <div className="absolute inset-0 bg-rose-600/40 rounded-full animate-ping opacity-20"></div>
+            <div className="absolute inset-[-20px] border border-rose-500/30 rounded-full animate-spin-slow"></div>
+            <div className="w-40 h-40 bg-[#050506] rounded-full flex flex-col items-center justify-center overflow-hidden border border-rose-500/50 shadow-[0_0_50px_rgba(244,63,94,0.4)]">
+              <ShieldAlert className="w-16 h-16 text-rose-500 animate-bounce" />
+              <span className="text-[10px] font-black text-rose-500 mt-2 tracking-[0.3em] uppercase">Emergencia</span>
             </div>
           </div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white mb-2 text-center">
-            ALERTA ENVIADA
+          <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white mb-3 text-center leading-none">
+            Alerta<br/><span className="text-rose-500">Transmitida</span>
           </h1>
-          <p className="text-white/80 font-bold uppercase tracking-widest text-xs text-center">
-            Ubicación compartida en tiempo real
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] text-center max-w-[240px]">
+            Trazando vector de ubicación en tiempo real para unidades de respuesta.
           </p>
         </div>
 
-        <div className="w-full space-y-4">
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-white/60 text-xs font-bold uppercase tracking-widest">Llamada 911 automática</span>
-              <span className="text-white font-black text-2xl animate-pulse">{call911Timer}s</span>
+        <div className="w-full space-y-4 max-w-sm relative z-10">
+          <div className="bg-[#0A0A0C]/90 backdrop-blur-2xl rounded-[2.5rem] p-6 border border-white/5 shadow-2xl">
+            <div className="flex justify-between items-center mb-5">
+              <div className="flex flex-col">
+                 <span className="text-white/40 text-[9px] font-black uppercase tracking-[0.2em]">Enlace 911 Directo</span>
+                 <span className="text-white/80 text-xs font-bold">Llamada automática en progreso</span>
+              </div>
+              <span className="text-rose-500 font-black text-3xl tabular-nums animate-pulse">{call911Timer}s</span>
             </div>
             <button
               onClick={handleCall911}
-              className="w-full bg-white text-error font-black py-4 rounded-xl flex items-center justify-center gap-3 uppercase shadow-lg"
+              className="w-full bg-rose-600 hover:bg-rose-500 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 uppercase shadow-[0_0_30px_rgba(225,29,72,0.4)] transition-all active:scale-[0.98]"
             >
-              <Phone className="w-6 h-6" />
-              Llamar ahora
+              <Phone className="w-5 h-5 fill-white" />
+              Establecer Conexión
             </button>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button
               onClick={() => setStreamAudio(!streamAudio)}
               className={cn(
-                "flex-1 p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all",
-                streamAudio ? "bg-white text-error border-white" : "bg-transparent text-white border-white/20"
+                "flex-1 py-5 rounded-2xl border transition-all flex flex-col items-center gap-2 group",
+                streamAudio 
+                  ? "bg-white text-[#050506] border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]" 
+                  : "bg-white/5 text-white border-white/10 hover:bg-white/10"
               )}
             >
-              <Volume2 className={cn("w-6 h-6", streamAudio && "animate-pulse")} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Audio Live</span>
+              <Volume2 className={cn("w-5 h-5", streamAudio && "animate-pulse")} />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Audio Vivo</span>
             </button>
             <button
               onClick={handleFinish}
-              className="flex-1 bg-white/20 text-white p-4 rounded-2xl border-2 border-white/20 flex flex-col items-center gap-2 hover:bg-white/30"
+              className="flex-1 bg-white/5 hover:bg-white/10 text-white py-5 rounded-2xl border border-white/10 flex flex-col items-center gap-2 transition-all group"
             >
-              <CheckCircle className="w-6 h-6" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Todo bien</span>
+              <CheckCircle className="w-5 h-5 text-success group-hover:scale-110 transition-transform" />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em]">Abortar</span>
             </button>
           </div>
         </div>
@@ -114,34 +123,33 @@ export function SOS() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-white flex flex-col font-display p-6 pb-32 relative overflow-hidden">
-      {/* Background Glow */}
+    <div className="min-h-screen bg-[#050506] text-white flex flex-col font-sans p-6 pb-24 relative overflow-hidden selection:bg-rose-500/30">
+      {/* Background Visual Components */}
       <div className={cn(
-        "absolute inset-0 transition-opacity duration-500",
-        activating ? "bg-error/20 opacity-100" : "opacity-0"
+        "absolute inset-0 transition-opacity duration-700 ease-out",
+        activating ? "bg-rose-600/10 opacity-100" : "opacity-0"
       )}></div>
+      
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -mr-48 -mt-48 pointer-events-none"></div>
 
       <button
         onClick={() => navigate(-1)}
-        className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-6 relative z-10"
+        className="w-10 h-10 rounded-full bg-white/5 border border-white/5 flex items-center justify-center mb-6 relative z-20 hover:bg-white/10 transition-colors"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="w-5 h-5 text-white/70" />
       </button>
 
       <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-        {activating && (
-          <div className="absolute inset-x-0 top-0 flex flex-col items-center">
-            <div className="text-6xl animate-bounce mb-4 opacity-40">🦉</div>
-            <div className="bg-error px-4 py-1 rounded-full font-black text-[10px] tracking-tighter mb-4 animate-pulse">GUARDUÁN ACTIVADO</div>
+        <div className="relative z-10 text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-rose-500/10 border border-rose-500/20 px-3 py-1 rounded-full mb-6">
+             <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.8)]"></div>
+             <span className="text-[9px] font-black text-rose-500 uppercase tracking-[0.2em]">Protocolo Guardián</span>
           </div>
-        )}
-
-        <div className="relative z-10 text-center mb-10">
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-2 text-primary shadow-primary/20 drop-shadow-lg">
-            {activating ? 'ARMANDO ALERTA' : 'Atenea Guardián'}
+          <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4 text-white leading-none">
+            {activating ? 'Transmisión<br/>Iniciada' : 'Atenea<br/><span className="text-primary">Guardián</span>'}
           </h1>
-          <p className="text-white/60 font-bold uppercase tracking-widest text-[10px] max-w-[200px] mx-auto leading-relaxed">
-            {activating ? `Iniciando protocolo en ${timeLeft}...` : 'Mantén presionado para enviar alerta silenciosa'}
+          <p className="text-white/40 font-bold uppercase tracking-[0.2em] text-[9px] max-w-[200px] mx-auto leading-relaxed h-8">
+            {activating ? `VECTOR ACTIVO EN ${timeLeft}...` : 'Mantén presionado para SOS silencioso'}
           </p>
         </div>
 
@@ -151,28 +159,39 @@ export function SOS() {
           onTouchStart={handlePressStart}
           onTouchEnd={handlePressEnd}
           className={cn(
-            "w-72 h-72 rounded-full border-[10px] flex flex-col items-center justify-center transition-all active:scale-90 relative",
+            "w-72 h-72 md:w-80 md:h-80 rounded-full border transition-all duration-300 relative flex flex-col items-center justify-center group touch-none",
             activating
-              ? "bg-error border-white scale-110 shadow-[0_0_100px_rgba(255,59,48,0.8)]"
-              : "bg-white/5 border-white/10 hover:border-error/40 shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+              ? "bg-rose-600 border-white scale-105 shadow-[0_0_80px_rgba(225,29,72,0.6)]"
+              : "bg-[#0A0A0C] border-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.8)] hover:border-rose-500/30"
           )}
         >
           {activating ? (
-            <span className="text-6xl font-black italic text-white">{timeLeft}</span>
+            <div className="flex flex-col items-center">
+               <span className="text-7xl font-black italic text-white leading-none tabular-nums animate-in zoom-in-50 duration-300">{timeLeft}</span>
+               <span className="text-[10px] font-black text-white/70 uppercase tracking-[0.3em] mt-2">Transmitiendo</span>
+            </div>
           ) : (
             <>
-              <div className="absolute -top-4 bg-error text-white text-[10px] font-black px-4 py-1 rounded-full shadow-lg border-2 border-white/20">SILENCIOSO</div>
-              <ShieldAlert className="w-24 h-24 mb-2 text-error animate-pulse" />
-              <span className="font-black text-2xl uppercase tracking-tighter text-error">EMERGENCIA</span>
+              <div className="absolute inset-4 border border-white/5 rounded-full z-0 group-hover:border-rose-500/20 transition-colors duration-500"></div>
+              <div className="w-24 h-24 rounded-[2rem] bg-rose-500/5 border border-rose-500/10 flex items-center justify-center mb-4 relative z-10 transition-transform duration-500 group-hover:scale-110">
+                 <ShieldAlert className="w-12 h-12 text-rose-500" />
+              </div>
+              <span className="font-black text-2xl uppercase tracking-tighter text-white relative z-10">SOS</span>
+              <span className="text-[9px] font-black text-rose-500/60 uppercase tracking-[0.3em] mt-2 relative z-10">Pulsar para activar</span>
             </>
+          )}
+          
+          {/* Progress ring when activating */}
+          {activating && (
+             <div className="absolute inset-[-10px] rounded-full border-2 border-white/10 border-t-white animate-spin-fast"></div>
           )}
         </button>
       </div>
 
       {/* Safety Toggles */}
-      <div className="space-y-3 mt-auto relative z-10">
-        <ContactRow icon={Users} label="Contactos de Confianza" value="5 Notificados vía SMS" active />
-        <ContactRow icon={Radio} label="Protocolo Escucha" value="Audio en vivo (Streaming)" active />
+      <div className="space-y-3 mt-auto relative z-20 max-w-sm mx-auto w-full">
+        <ContactRow icon={Users} label="Célula de Confianza" value="5 Agentes en Alerta" active />
+        <ContactRow icon={Radio} label="Protocolo Escucha" value="Enlace de Audio Streaming" active />
       </div>
 
     </div>
@@ -181,18 +200,26 @@ export function SOS() {
 
 function ContactRow({ icon: Icon, label, value, active }: any) {
   return (
-    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex items-center justify-between">
+    <div className="bg-[#0A0A0C]/80 backdrop-blur-3xl border border-white/5 rounded-[1.5rem] p-4 flex items-center justify-between shadow-xl group">
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-primary">
+        <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-primary group-hover:border-primary/20 transition-colors">
           <Icon className="w-5 h-5" />
         </div>
         <div>
-          <p className="font-bold text-sm tracking-tight">{label}</p>
-          <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{value}</p>
+          <p className="font-black text-sm tracking-tight text-white/90 uppercase leading-none mb-1">{label}</p>
+          <p className="text-[9px] font-bold text-white/30 uppercase tracking-[0.2em]">{value}</p>
         </div>
       </div>
-      <div className={cn("w-12 h-6 rounded-full relative transition-colors", active ? "bg-success shadow-[0_0_10px_rgba(76,175,80,0.5)]" : "bg-white/10")}>
-        <div className={cn("absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all", active ? "right-1" : "left-1")}></div>
+      <div className={cn(
+        "w-12 h-6 rounded-full relative transition-all duration-500 border border-white/5 shadow-inner", 
+        active ? "bg-primary/20" : "bg-white/5"
+      )}>
+        <div className={cn(
+          "absolute top-1 w-3.5 h-3.5 rounded-full shadow-lg transition-all duration-500", 
+          active 
+            ? "right-1 bg-primary shadow-[0_0_10px_rgba(255,215,0,0.8)]" 
+            : "left-1 bg-white/20"
+        )}></div>
       </div>
     </div>
   )
