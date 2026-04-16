@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Shield, Droplets, AlertTriangle, Pill, Phone, Stethoscope, Save } from 'lucide-react';
+import { ChevronLeft, Shield, Droplets, AlertTriangle, Pill, Phone, Stethoscope, Save, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getUserProfile, updateUserProfile } from '../services/authService';
 import { UserProfile } from '../types';
